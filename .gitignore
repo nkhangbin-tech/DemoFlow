@@ -1,0 +1,41 @@
+# Delphi generated outputs
+*.dcu
+*.ddp
+*.~*
+*.identcache
+*.local
+*.tvsconfig
+*.rsm
+*.map
+*.drc
+*.hpp
+*.obj
+*.o
+*.lib
+*.bpl
+*.dcp
+*.exe
+
+# Project-local build directories
+Win32/
+Win64/
+Debug/
+Release/
+build/
+output/
+
+# IDE and user-local settings
+*.dsk
+*.otares
+*.stat
+.idea/
+.vs/
+
+# Local runtime data and logs
+logs/
+*.log
+config.local.json
+*.user.json
+
+# Keep source, forms, resources, tests, documentation, and example configuration.
+
