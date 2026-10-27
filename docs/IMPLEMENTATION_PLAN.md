@@ -92,6 +92,17 @@ Implementation record:
   them to the application. Logging remains optional and does not change
   application startup in PA-004C.
 
+### PA-005A — Application Bootstrap and Safe Mode
+
+- Files: main form startup/shutdown integration and a non-personal fixture.
+- Acceptance: resolve `%LOCALAPPDATA%\PresenterAssistant`, initialize the
+  real logger, load the real configuration store, show accurate status and
+  safe-mode diagnostics, and shut down the logger through its public API.
+- The application does not create an initial configuration or invent scenario
+  values when `config.json` is missing.
+- PA-005A is complete pending developer IDE/runtime verification. PA-005B
+  remains separate for the system tray and lifecycle controls.
+
 ### PA-005 — Tray shell and lifecycle
 
 - Acceptance: tray status, diagnostics, enable/disable, and safe shutdown work.

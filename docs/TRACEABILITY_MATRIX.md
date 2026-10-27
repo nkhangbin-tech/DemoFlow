@@ -27,6 +27,7 @@
 | Logging/diagnostics | ARCHITECTURE, TEST_PLAN | PA-004C, PA-005, PA-015 | Logger harness: structured output, redaction, bounded queue, writer errors, rotation, flush, and shutdown; later lifecycle/recovery tests |
 | Safe shutdown | ARCHITECTURE | PA-005, PA-011, PA-015 | Repeated shutdown and process inspection |
 | No auto-start/admin | PROJECT_SPEC | PA-003, PA-015 | Packaging review |
+| Application bootstrap and safe mode | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-005A | VCL startup status, missing/invalid configuration, logger shutdown |
 
 Each row requires both automated evidence where possible and the specified
 runtime evidence for hardware/Office behavior.

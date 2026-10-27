@@ -2,9 +2,9 @@
 
 ## Current baseline
 
-- **Task:** PA-004C
-- **Task type:** Logging, redaction, and diagnostic evidence
-- **Status:** Source implementation and command-line logger tests complete; new IDE/runtime verification is pending.
+- **Task:** PA-005A
+- **Task type:** Application bootstrap and safe mode
+- **Status:** Source implementation and command-line build/test evidence complete; new IDE/runtime verification is pending.
 - **Workspace state:** Git repository on branch `main`; minimal application project now exists.
 - **Historical baseline:** PA-001 recorded the workspace as not yet initialized as Git. That historical observation is preserved in the audit.
 - **Primary target:** Win64.
@@ -21,6 +21,7 @@
   logger unit available to the project.
 - **PA-004C logger harness:** Built and executed successfully with exit code 0.
 - **PA-004C logging implementation:** Complete pending developer verification.
+- **PA-005A bootstrap integration:** Complete pending developer verification.
 - **Known PA-004B limitation:** Browser `titlePattern` is validated as a
   non-empty opaque pattern; regex syntax is intentionally not interpreted.
 
@@ -48,5 +49,7 @@ application test results.
 | PA-004A | Foundation | Complete pending developer verification | Domain models and pure functions |
 | PA-004B | Foundation | Complete pending developer verification | JSON configuration loading, validation, and saving |
 | PA-004C | Foundation | Complete pending developer verification | Logging, redaction, bounded writing, rotation, and diagnostic evidence |
+| PA-005A | Implementation | Complete pending developer verification | Application bootstrap, configuration loading, visible safe mode, and bounded logger shutdown |
+| PA-005B | Implementation | Not started | System tray and lifecycle controls |
 
 PA-001 does not mark any application feature as implemented or tested.

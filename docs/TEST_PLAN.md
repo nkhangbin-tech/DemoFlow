@@ -28,6 +28,14 @@ after shutdown, and temporary-directory cleanup. The logger harness is
 RTL-only and does not exercise VCL, COM, PowerPoint, Core Audio, hooks, or
 hardware.
 
+PA-005A bootstrap verification uses the real configuration store and logger
+through the VCL startup path. Missing, valid, malformed, and invalid
+configuration cases are deterministic when run against an isolated
+`LOCALAPPDATA` test profile or fixture. The current command-line evidence
+covers compilation; startup status and shutdown remain manual IDE/runtime
+checks because the implementation is VCL-owned. PA-005B tray behavior is not
+part of this task.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and

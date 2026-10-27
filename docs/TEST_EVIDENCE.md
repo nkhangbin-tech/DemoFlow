@@ -24,6 +24,11 @@
 - PA-004C logger harness build: **Completed**
 - PA-004C logger harness execution: **Completed; exit code 0**
 - PA-004C developer IDE/runtime verification: **Pending**
+- PA-005A source implementation: **Complete**
+- PA-005A command-line Win64 application build: **Completed**
+- PA-005A automated bootstrap harness: **Not added; startup is VCL-owned and
+  requires manual IDE/runtime verification**
+- PA-005A developer IDE/runtime verification: **Pending**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -163,6 +168,22 @@ milliseconds, severity, category, string correlation ID, message, and
 optional explicit exception fields. Query strings and fragments in HTTP/HTTPS
 URLs are replaced before queue insertion. The logger does not attempt to
 identify arbitrary secrets in free-form text.
+
+## PA-005A build evidence
+
+The integrated Win64 application was built with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -UConfig;Domain;Infrastructure -EWin64\Debug -NUWin64\Debug PresenterAssistant.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+
+The application now resolves configuration and logs under
+`%LOCALAPPDATA%\PresenterAssistant\`, displays the actual logger and
+configuration results, enters safe mode for missing or invalid configuration,
+and shuts down the logger through `Flush` and `Shutdown`. The non-personal
+fixture is [PA005A-example-config.json](../tests/fixtures/PA005A-example-config.json).
 
 ## Collected environment evidence
 

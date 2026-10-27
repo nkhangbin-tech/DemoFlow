@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "mode": "passThrough",
+  "audio": {
+    "enabled": false,
+    "deltaMode": false,
+    "contextMaxAgeMs": 3000,
+    "rules": []
+  },
+  "browserProfiles": [],
+  "sequence": []
+}

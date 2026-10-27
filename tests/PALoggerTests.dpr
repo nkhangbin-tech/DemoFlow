@@ -167,4 +167,5 @@ begin
       ExitCode := 1;
     end;
   end;
+  readln;
 end.
