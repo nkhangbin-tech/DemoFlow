@@ -24,7 +24,7 @@
 | Versioned dynamic JSON | CONFIGURATION_SCHEMA | PA-004B, PA-013 | Version/unknown-property/atomic-reload tests |
 | Pass-through/intercept modes | PROJECT_SPEC | PA-013, PA-014 | Controller integration tests |
 | Browser return precedence | CONFIGURATION_SCHEMA | PA-013 | Next/Previous route tests |
-| Logging/diagnostics | ARCHITECTURE, TEST_PLAN | PA-004C, PA-005, PA-015 | Redaction/lifecycle/recovery tests |
+| Logging/diagnostics | ARCHITECTURE, TEST_PLAN | PA-004C, PA-005, PA-015 | Logger harness: structured output, redaction, bounded queue, writer errors, rotation, flush, and shutdown; later lifecycle/recovery tests |
 | Safe shutdown | ARCHITECTURE | PA-005, PA-011, PA-015 | Repeated shutdown and process inspection |
 | No auto-start/admin | PROJECT_SPEC | PA-003, PA-015 | Packaging review |
 

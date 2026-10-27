@@ -71,6 +71,27 @@ evidence as a unit-test pass.
 - Evidence: test output and sanitized log sample.
 - Fallback: explicit diagnostics if logging is unavailable.
 
+Implementation record:
+
+- `Infrastructure\PALogger.pas` provides `TLogger` with Debug, Info, Warning,
+  Error, and Critical severities; category, correlation ID, and explicit
+  exception fields; UTF-8 JSON-lines output; `Flush`; idempotent `Shutdown`;
+  dropped-message and write-error counters; and a last-write-error status.
+- A dedicated writer thread drains a bounded queue. The default capacity is
+  256 messages. Debug and Info messages are dropped when full; Warning,
+  Error, and Critical messages evict the oldest lowest-severity queued item
+  when possible. Enqueue performs no disk I/O.
+- Messages are redacted before enqueue. HTTP/HTTPS query strings and
+  fragments are replaced with a fixed marker; newline characters are JSON
+  escaped. This is not arbitrary secret detection.
+- The active file rotates before exceeding 1 MiB. Up to three numbered
+  rotations are retained (`.1` through `.3`); unavailable directories,
+  locked files, and write failures increment the error counter without
+  escaping from the writer thread or recursively logging. Logger
+  initialization also records directory-creation failures instead of raising
+  them to the application. Logging remains optional and does not change
+  application startup in PA-004C.
+
 ### PA-005 — Tray shell and lifecycle
 
 - Acceptance: tray status, diagnostics, enable/disable, and safe shutdown work.

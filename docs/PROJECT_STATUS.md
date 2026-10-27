@@ -2,9 +2,9 @@
 
 ## Current baseline
 
-- **Task:** PA-004B
-- **Task type:** JSON configuration loading, validation, and saving
-- **Status:** Source implementation and command-line configuration tests complete; new IDE/runtime verification is pending.
+- **Task:** PA-004C
+- **Task type:** Logging, redaction, and diagnostic evidence
+- **Status:** Source implementation and command-line logger tests complete; new IDE/runtime verification is pending.
 - **Workspace state:** Git repository on branch `main`; minimal application project now exists.
 - **Historical baseline:** PA-001 recorded the workspace as not yet initialized as Git. That historical observation is preserved in the audit.
 - **Primary target:** Win64.
@@ -17,7 +17,10 @@
 - **PA-004B configuration implementation:** Complete pending developer verification.
 - **PA-004B command-line application build:** Completed successfully.
 - **PA-004B configuration harness:** Built and executed successfully.
-- **PA-004C logging implementation:** Not started.
+- **PA-004C command-line application build:** Completed successfully with the
+  logger unit available to the project.
+- **PA-004C logger harness:** Built and executed successfully with exit code 0.
+- **PA-004C logging implementation:** Complete pending developer verification.
 - **Known PA-004B limitation:** Browser `titlePattern` is validated as a
   non-empty opaque pattern; regex syntax is intentionally not interpreted.
 
@@ -44,6 +47,6 @@ application test results.
 | PA-003 | Implementation | Accepted by developer report | Build the smallest compilable Win64 VCL project |
 | PA-004A | Foundation | Complete pending developer verification | Domain models and pure functions |
 | PA-004B | Foundation | Complete pending developer verification | JSON configuration loading, validation, and saving |
-| PA-004C | Foundation | Not started | Logging and log redaction |
+| PA-004C | Foundation | Complete pending developer verification | Logging, redaction, bounded writing, rotation, and diagnostic evidence |
 
 PA-001 does not mark any application feature as implemented or tested.

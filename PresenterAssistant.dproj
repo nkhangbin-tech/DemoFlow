@@ -78,6 +78,7 @@
         </DCCReference>
         <DCCReference Include="Domain\PADomainTypes.pas"/>
         <DCCReference Include="Config\PAConfiguration.pas"/>
+        <DCCReference Include="Infrastructure\PALogger.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

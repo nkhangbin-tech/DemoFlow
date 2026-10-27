@@ -20,6 +20,14 @@ PA-004B configuration tests cover strict version-1 parsing, unknown-property
 rejection, field-path diagnostics, selector/reference validation, round trips,
 safe reload preservation, missing files, and temporary-file saving.
 
+PA-004C logger tests cover every severity, structured metadata, explicit
+exception fields, URL query/fragment redaction, malformed URLs, newline
+escaping, concurrent callers, bounded-queue overflow, bounded flush,
+writer-error reporting, rotation and retention, repeated shutdown, logging
+after shutdown, and temporary-directory cleanup. The logger harness is
+RTL-only and does not exercise VCL, COM, PowerPoint, Core Audio, hooks, or
+hardware.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and

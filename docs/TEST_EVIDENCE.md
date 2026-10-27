@@ -19,6 +19,11 @@
 - PA-004B configuration harness build: **Completed**
 - PA-004B configuration tests executed: **Completed**
 - PA-004B developer IDE/runtime verification: **Pending**
+- PA-004C source implementation: **Complete**
+- PA-004C command-line application build: **Completed**
+- PA-004C logger harness build: **Completed**
+- PA-004C logger harness execution: **Completed; exit code 0**
+- PA-004C developer IDE/runtime verification: **Pending**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -117,6 +122,47 @@ successful run used only isolated temporary paths and cleaned them up.
 
 No Delphi IDE build or manual application runtime test was performed in this
 session.
+
+## PA-004C exact commands and observed results
+
+The logger unit was compiled as part of the main Win64 application:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -EWin64\Debug -NUWin64\Debug PresenterAssistant.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+The application compiled with `Infrastructure\PALogger.pas`.
+
+The isolated RTL-only logger harness was compiled with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UInfrastructure -EWin64\Debug\logger-tests -NUWin64\Debug\logger-tests tests\PALoggerTests.dpr'
+```
+
+Result: **success**, compiler exit code `0`.
+
+The harness was executed with:
+
+```powershell
+& 'E:\Programming\Tool\DemoFlow\Win64\Debug\logger-tests\PALoggerTests.exe'
+```
+
+Result: **success**, process exit code `0`; all logger tests reported `PASS`,
+followed by `All logger tests passed.` The tests used a temporary directory
+and removed it after completion.
+
+The logger harness uses `logger-test-data` below the executable directory and
+removes it after completion. The writer-error case uses a directory path as
+the configured log filename.
+The logger records the resulting file-creation failure through
+`WriteErrorCount` without raising an unhandled writer-thread exception.
+
+The logger format is UTF-8 JSON Lines with ISO-8601 timestamps including
+milliseconds, severity, category, string correlation ID, message, and
+optional explicit exception fields. Query strings and fragments in HTTP/HTTPS
+URLs are replaced before queue insertion. The logger does not attempt to
+identify arbitrary secrets in free-form text.
 
 ## Collected environment evidence
 
