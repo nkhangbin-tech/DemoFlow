@@ -28,6 +28,7 @@
 | Safe shutdown | ARCHITECTURE | PA-005, PA-011, PA-015 | Repeated shutdown and process inspection |
 | No auto-start/admin | PROJECT_SPEC | PA-003, PA-015 | Packaging review |
 | Application bootstrap and safe mode | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-005A | VCL startup status, missing/invalid configuration, logger shutdown |
+| Tray lifecycle and explicit exit | ARCHITECTURE | PA-005B | Tray/manual hide, restore, reload, exit, and session-end tests |
 
 Each row requires both automated evidence where possible and the specified
 runtime evidence for hardware/Office behavior.

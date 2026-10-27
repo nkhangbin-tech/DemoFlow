@@ -185,6 +185,29 @@ configuration results, enters safe mode for missing or invalid configuration,
 and shuts down the logger through `Flush` and `Shutdown`. The non-personal
 fixture is [PA005A-example-config.json](../tests/fixtures/PA005A-example-config.json).
 
+## PA-005B build and regression evidence
+
+The PA-005B application was built with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -UConfig;Domain;Infrastructure -EWin64\Debug2 -NUWin64\Debug2 PresenterAssistant.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+The standard `Win64\Debug` executable was locked by a running/external
+process during this verification, so the build used the clean temporary
+`Win64\Debug2` output directory.
+
+Regression harnesses were compiled and executed from `Win64\Debug2`:
+
+- `PADomainTests.exe`: exit code `0`; all domain tests passed.
+- `PAConfigurationTests.exe`: exit code `0`; all configuration tests passed,
+  including failed-reload preservation.
+- `PALoggerTests.exe`: exit code `0`; all logger tests passed.
+
+PA-005B manual tray, minimize, ordinary-close, reload-menu, explicit-exit,
+and Windows session-end checks remain **pending developer verification**.
+
 ## Collected environment evidence
 
 | Check | Result | Interpretation |

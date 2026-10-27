@@ -22,6 +22,8 @@
 - **PA-004C logger harness:** Built and executed successfully with exit code 0.
 - **PA-004C logging implementation:** Complete pending developer verification.
 - **PA-005A bootstrap integration:** Complete pending developer verification.
+- **PA-005B tray integration:** Source implementation and command-line build
+  complete; manual tray/lifecycle verification is pending.
 - **Known PA-004B limitation:** Browser `titlePattern` is validated as a
   non-empty opaque pattern; regex syntax is intentionally not interpreted.
 
@@ -50,6 +52,6 @@ application test results.
 | PA-004B | Foundation | Complete pending developer verification | JSON configuration loading, validation, and saving |
 | PA-004C | Foundation | Complete pending developer verification | Logging, redaction, bounded writing, rotation, and diagnostic evidence |
 | PA-005A | Implementation | Complete pending developer verification | Application bootstrap, configuration loading, visible safe mode, and bounded logger shutdown |
-| PA-005B | Implementation | Not started | System tray and lifecycle controls |
+| PA-005B | Implementation | Complete pending developer verification | System tray, hide/restore, reload, explicit exit, and session-end shutdown |
 
 PA-001 does not mark any application feature as implemented or tested.

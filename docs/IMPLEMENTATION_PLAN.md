@@ -103,6 +103,18 @@ Implementation record:
 - PA-005A is complete pending developer IDE/runtime verification. PA-005B
   remains separate for the system tray and lifecycle controls.
 
+### PA-005B — System Tray and Application Lifecycle Controls
+
+- Files: main form and DFM tray components.
+- Acceptance: tray visibility follows established startup state; show,
+  reload, status, services-not-implemented, and exit actions are accurate.
+- Ordinary close and minimize hide the form without shutting down startup
+  resources. Explicit tray Exit removes the icon and performs final shutdown
+  exactly once. Windows session-end notification performs final cleanup rather
+  than hiding the application.
+- PA-005B remains pending developer IDE/runtime verification; no automation
+  service is started by the tray shell.
+
 ### PA-005 — Tray shell and lifecycle
 
 - Acceptance: tray status, diagnostics, enable/disable, and safe shutdown work.

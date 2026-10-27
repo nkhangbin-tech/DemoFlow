@@ -36,6 +36,13 @@ covers compilation; startup status and shutdown remain manual IDE/runtime
 checks because the implementation is VCL-owned. PA-005B tray behavior is not
 part of this task.
 
+PA-005B manual checks cover tray visibility after startup, double-click
+restore, context-menu actions, minimize and ordinary-close hide behavior,
+repeated restore without duplicate initialization, reload success/failure and
+active-configuration preservation, explicit Exit, tray removal, bounded logger
+shutdown, and Windows logoff/shutdown handling. These checks require the VCL
+application and are not claimed by the console harnesses.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and

@@ -15,9 +15,13 @@ BEGIN
       VALUE "ProductName", "Presenter Assistant"
       VALUE "ProductVersion", "1.0.0.0"
     END
+
   END
   BLOCK "VarFileInfo"
   BEGIN
     VALUE "Translation", 0x0409, 1252
   END
+
 END
+
+1 ICON "PresenterAssistant.ico"
