@@ -2,14 +2,17 @@
 
 ## Current baseline
 
-- **Task:** PA-002
-- **Task type:** Architecture and implementation specification
-- **Status:** Complete after PA-002R ambiguity resolution; application implementation has not started.
-- **Workspace state:** Git repository on branch `main`; no application source exists.
+- **Task:** PA-003
+- **Task type:** Minimal buildable Delphi VCL application
+- **Status:** Source implementation complete; command-line Win64 compilation completed; IDE and manual runtime verification are pending.
+- **Workspace state:** Git repository on branch `main`; minimal application project now exists.
 - **Historical baseline:** PA-001 recorded the workspace as not yet initialized as Git. That historical observation is preserved in the audit.
-- **Primary target recommendation:** Win64, pending PA-003 build evidence.
-- **Application features implemented:** None.
-- **Application features tested:** None.
+- **Primary target:** Win64.
+- **Application source implemented:** Minimal VCL placeholder only.
+- **Command-line build:** Completed successfully with `dcc64.exe`.
+- **Delphi IDE build:** Pending developer verification.
+- **Application run/manual runtime verification:** Pending developer verification.
+- **PA automation features implemented:** None.
 
 ## Evidence summary
 
@@ -30,6 +33,6 @@ application test results.
 | PA-001 | Audit/documentation | Complete | Establish workspace, toolchain, target, risk, and evidence baseline |
 | PA-002 | Architecture/specification | Complete | Define project structure, target matrix, dependencies, state/thread model, schema, tests, and roadmap |
 | PA-002R | Architecture clarification | Complete | Resolve hook suppression, volume delta, sequence matching, versioning, event timing, and Core Audio ownership contracts |
-| PA-003 | Implementation | Not started | Build the smallest compilable Win64 VCL project |
+| PA-003 | Implementation | In progress | Build the smallest compilable Win64 VCL project; source and command-line build are complete, IDE/runtime checks remain |
 
 PA-001 does not mark any application feature as implemented or tested.
