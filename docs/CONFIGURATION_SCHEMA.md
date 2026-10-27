@@ -82,6 +82,15 @@ Values below illustrate types and relationships, not a required scenario:
 }
 ```
 
+## Browser profile fields
+
+Browser profiles require stable `id`, `executable`, `className`, and non-empty
+`titlePattern` values. `url` is optional; `launchUrl`, `activate`, and
+`autoplay` are independent options. Version 1 treats `titlePattern` as an
+opaque non-empty matching pattern because the schema does not define a regular
+expression dialect. The configuration layer therefore validates presence and
+type but does not compile or interpret the pattern.
+
 ## Sequence fields and matching
 
 - `sequence[].id`: non-empty stable string, unique case-sensitively.
@@ -204,4 +213,3 @@ Authoritative cases:
 If the endpoint API cannot return a usable event context, the implementation
 must not infer manual adjustment from notifications; it must disable delta
 updates, preserve absolute-mode safety, and report the limitation.
-

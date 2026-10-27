@@ -11,6 +11,9 @@
 | Default endpoint master volume | ARCHITECTURE | PA-008 | Core Audio endpoint runtime test |
 | Domain state contracts | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-004A | Domain harness and default-state tests |
 | Effective volume arithmetic | CONFIGURATION_SCHEMA | PA-004A | Boundary, offset, and clipping tests |
+| JSON configuration parsing | CONFIGURATION_SCHEMA | PA-004B | Valid/invalid parser harness tests |
+| Configuration validation diagnostics | CONFIGURATION_SCHEMA | PA-004B | Field-path and reference validation tests |
+| Configuration round-trip/save/reload | CONFIGURATION_SCHEMA | PA-004B | Serialization and isolated file tests |
 | Volume selectors/priority | CONFIGURATION_SCHEMA | PA-004B, PA-009 | Selector, priority, tie-rejection tests |
 | Volume delta math | CONFIGURATION_SCHEMA | PA-009 | Command-context and no-drift tests |
 | Endpoint callback cleanup | ARCHITECTURE | PA-008 | Unregister-before-release test |

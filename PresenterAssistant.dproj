@@ -76,6 +76,8 @@
         <DCCReference Include="uMainForm.pas">
             <Form>MainForm</Form>
         </DCCReference>
+        <DCCReference Include="Domain\PADomainTypes.pas"/>
+        <DCCReference Include="Config\PAConfiguration.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

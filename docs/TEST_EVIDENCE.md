@@ -1,6 +1,6 @@
 # Presenter Assistant Test Evidence
 
-## PA-001/PA-002/PA-002R/PA-003/PA-004A evidence
+## PA-001/PA-002/PA-002R/PA-003/PA-004A/PA-004B evidence
 
 - Audit date: 2026-10-27
 - Source implementation: **Complete for the minimal PA-003 skeleton**
@@ -14,6 +14,11 @@
 - PA-004A domain harness build: **Completed**
 - PA-004A domain tests executed: **Completed**
 - PA-004A developer IDE/runtime verification: **Pending**
+- PA-004B source implementation: **Complete**
+- PA-004B command-line application build: **Completed**
+- PA-004B configuration harness build: **Completed**
+- PA-004B configuration tests executed: **Completed**
+- PA-004B developer IDE/runtime verification: **Pending**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -88,6 +93,30 @@ clipping, and default-state tests passed with exit code `0`.
 
 The PA-004A tests were run in this session. No Delphi IDE build or manual
 application runtime test was performed in this session.
+
+## PA-004B exact commands and observed results
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -EWin64\Debug -NUWin64\Debug PresenterAssistant.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UDomain;Config -EWin64\Debug\config-tests -NUWin64\Debug\config-tests tests\PAConfigurationTests.dpr'
+& 'E:\Programming\Tool\DemoFlow\Win64\Debug\config-tests\PAConfigurationTests.exe'
+```
+
+Result: **success**, compiler exit code `0`, test process exit code `0`.
+All configuration tests reported `PASS`, followed by
+`All configuration tests passed.`
+
+The first configuration test run exposed fixture/cleanup issues and exited `1`;
+those test-only issues were corrected before the successful run above. The
+successful run used only isolated temporary paths and cleaned them up.
+
+No Delphi IDE build or manual application runtime test was performed in this
+session.
 
 ## Collected environment evidence
 

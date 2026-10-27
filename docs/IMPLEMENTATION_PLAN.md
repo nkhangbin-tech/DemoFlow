@@ -48,13 +48,16 @@ evidence as a unit-test pass.
 
 ### PA-004B — Configuration, validation, and saving
 
-- Files: Domain, Config, Infrastructure units and unit tests.
-- Acceptance: valid schema loads atomically; all invalid cases report paths;
-  logs redact URL query strings and rotate/retain as specified.
-- Automated check: parser/validator/property tests and log redaction tests.
-- Manual check: replace config while running and confirm failed replacement
-  leaves the last valid configuration active.
-- Evidence: test report and sample sanitized logs.
+- Files: `Config\PAConfiguration.pas`, configuration test harness.
+- Acceptance: version-1 JSON parses and serializes bidirectionally; unknown
+  properties, invalid values, references, transitions, and ambiguity report
+  field paths; failed reload preserves the active configuration.
+- Automated check: isolated RTL-only parser, validator, round-trip, reload, and
+  safe-save tests.
+- Manual check: inspect a saved UTF-8 configuration and verify the active
+  configuration remains unchanged after a failed reload.
+- Evidence: compiler output, passing test output, and isolated temporary-file
+  cleanup.
 - Fallback: safe mode with no active sequence.
 
 ### PA-004C — Logging and log redaction

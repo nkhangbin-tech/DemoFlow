@@ -16,6 +16,10 @@ PA-004A domain harness tests cover percentage boundaries, positive and negative
 offsets, clipping, and default unknown/unavailable state records. The harness
 uses only Delphi RTL and exits nonzero on assertion failure.
 
+PA-004B configuration tests cover strict version-1 parsing, unknown-property
+rejection, field-path diagnostics, selector/reference validation, round trips,
+safe reload preservation, missing files, and temporary-file saving.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and
