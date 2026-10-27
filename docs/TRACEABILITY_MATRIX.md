@@ -9,17 +9,19 @@
 | Pre-transition event handling | ARCHITECTURE | PA-007 | Event invalidation/post-poll test |
 | Explicit build uncertainty | CONFIGURATION_SCHEMA, TEST_PLAN | PA-006, PA-007, PA-013 | Verified/unavailable/ambiguous build tests |
 | Default endpoint master volume | ARCHITECTURE | PA-008 | Core Audio endpoint runtime test |
-| Volume selectors/priority | CONFIGURATION_SCHEMA | PA-004, PA-009 | Selector, priority, tie-rejection tests |
+| Domain state contracts | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-004A | Domain harness and default-state tests |
+| Effective volume arithmetic | CONFIGURATION_SCHEMA | PA-004A | Boundary, offset, and clipping tests |
+| Volume selectors/priority | CONFIGURATION_SCHEMA | PA-004B, PA-009 | Selector, priority, tie-rejection tests |
 | Volume delta math | CONFIGURATION_SCHEMA | PA-009 | Command-context and no-drift tests |
 | Endpoint callback cleanup | ARCHITECTURE | PA-008 | Unregister-before-release test |
 | Window tracking | ARCHITECTURE | PA-010 | Fake and real window tests |
 | Input capture safe default | ARCHITECTURE | PA-011 | Capture-only non-suppression test |
 | Synchronous input suppression | ARCHITECTURE | PA-011, PA-012 | Snapshot, queue-full, dispatch-failure tests |
 | Win+Tab mapping | ARCHITECTURE | PA-012 | SendInput, injected, modifier-cleanup tests |
-| Versioned dynamic JSON | CONFIGURATION_SCHEMA | PA-004, PA-013 | Version/unknown-property/atomic-reload tests |
+| Versioned dynamic JSON | CONFIGURATION_SCHEMA | PA-004B, PA-013 | Version/unknown-property/atomic-reload tests |
 | Pass-through/intercept modes | PROJECT_SPEC | PA-013, PA-014 | Controller integration tests |
 | Browser return precedence | CONFIGURATION_SCHEMA | PA-013 | Next/Previous route tests |
-| Logging/diagnostics | ARCHITECTURE, TEST_PLAN | PA-004, PA-005, PA-015 | Redaction/lifecycle/recovery tests |
+| Logging/diagnostics | ARCHITECTURE, TEST_PLAN | PA-004C, PA-005, PA-015 | Redaction/lifecycle/recovery tests |
 | Safe shutdown | ARCHITECTURE | PA-005, PA-011, PA-015 | Repeated shutdown and process inspection |
 | No auto-start/admin | PROJECT_SPEC | PA-003, PA-015 | Packaging review |
 

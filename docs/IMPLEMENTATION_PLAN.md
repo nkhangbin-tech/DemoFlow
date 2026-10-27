@@ -7,16 +7,18 @@ evidence as a unit-test pass.
 | ID | Purpose | Depends on |
 |---|---|---|
 | PA-003 | Buildable Win64 VCL skeleton and repository baseline | PA-002 |
-| PA-004 | Domain models, JSON configuration, logging | PA-003 |
-| PA-005 | Tray UI and lifecycle/safe mode | PA-004 |
-| PA-006 | Minimal PowerPoint attachment and polling | PA-003, PA-004 |
+| PA-004A | Domain models and pure functions | PA-003 |
+| PA-004B | JSON configuration loading, validation, and saving | PA-004A |
+| PA-004C | Logging and log redaction | PA-004A |
+| PA-005 | Tray UI and lifecycle/safe mode | PA-004B, PA-004C |
+| PA-006 | Minimal PowerPoint attachment and polling | PA-003, PA-004A, PA-004C |
 | PA-007 | PowerPoint events and reconciliation | PA-006 |
-| PA-008 | Core Audio endpoint discovery/read/write | PA-003, PA-004 |
-| PA-009 | Volume rules and delta mode | PA-004, PA-008 |
-| PA-010 | Window Tracker | PA-004, PA-005 |
-| PA-011 | Input capture without suppression | PA-003, PA-004 |
+| PA-008 | Core Audio endpoint discovery/read/write | PA-003, PA-004A, PA-004C |
+| PA-009 | Volume rules and delta mode | PA-004A, PA-004B, PA-008 |
+| PA-010 | Window Tracker | PA-004A, PA-004B, PA-005 |
+| PA-011 | Input capture without suppression | PA-003, PA-004A |
 | PA-012 | Configurable Win+Tab mapping | PA-011, PA-005 |
-| PA-013 | JSON Sequence Engine | PA-004 |
+| PA-013 | JSON Sequence Engine | PA-004A, PA-004B |
 | PA-014 | Scenario Manager integration | PA-006, PA-009, PA-010, PA-013 |
 | PA-015 | End-to-end tests, recovery, release preparation | PA-007, PA-012, PA-014 |
 
@@ -34,7 +36,17 @@ evidence as a unit-test pass.
 - Evidence: compiler output, IDE target screenshot/log, executable launch.
 - Fallback: keep the skeleton with no services if target or license blocks build.
 
-### PA-004 — Configuration, domain, logging
+### PA-004A — Domain models and pure functions
+
+- Files: `Domain\PADomainTypes.pas`, `tests\PADomainTests.dpr`.
+- Acceptance: RTL-only value types represent approved state and configuration
+  contracts; effective volume uses `Clamp(Nominal + Offset, 0, 100)`.
+- Automated check: build and run the Win64 console domain harness.
+- Manual check: inspect default unknown/unavailable record states.
+- Evidence: compiler output and passing test output.
+- Fallback: no runtime services depend on this layer until accepted.
+
+### PA-004B — Configuration, validation, and saving
 
 - Files: Domain, Config, Infrastructure units and unit tests.
 - Acceptance: valid schema loads atomically; all invalid cases report paths;
@@ -44,6 +56,17 @@ evidence as a unit-test pass.
   leaves the last valid configuration active.
 - Evidence: test report and sample sanitized logs.
 - Fallback: safe mode with no active sequence.
+
+### PA-004C — Logging and log redaction
+
+- Files: Infrastructure logging units and focused tests.
+- Dependencies: PA-004A; does not depend on PA-004B.
+- Acceptance: structured severity/timestamp logging, bounded writes, retention,
+  and URL query-string redaction work without blocking the controller.
+- Automated check: log redaction and writer failure tests.
+- Manual check: inspect sanitized local log output.
+- Evidence: test output and sanitized log sample.
+- Fallback: explicit diagnostics if logging is unavailable.
 
 ### PA-005 — Tray shell and lifecycle
 

@@ -1,6 +1,6 @@
 # Presenter Assistant Test Evidence
 
-## PA-001/PA-002/PA-002R/PA-003 evidence
+## PA-001/PA-002/PA-002R/PA-003/PA-004A evidence
 
 - Audit date: 2026-10-27
 - Source implementation: **Complete for the minimal PA-003 skeleton**
@@ -9,10 +9,16 @@
 - Application runtime verification: **Pending**
 - Automated test verification: **Pending**
 - Hardware/integration verification: **Pending**
+- PA-004A source implementation: **Complete**
+- PA-004A command-line application build: **Completed**
+- PA-004A domain harness build: **Completed**
+- PA-004A domain tests executed: **Completed**
+- PA-004A developer IDE/runtime verification: **Pending**
 
-PA-003 created only the minimal Delphi project and placeholder form. It did not
-implement system tray behavior, PowerPoint, Core Audio, input hooks, window
-tracking, browser activation, sequence routing, JSON configuration, or tests.
+PA-004A added only RTL-only domain contracts and pure volume helpers plus a
+small console harness. It did not implement system tray behavior, PowerPoint,
+Core Audio, input hooks, window tracking, browser activation, sequence routing,
+JSON configuration, or logging.
 
 ## Exact commands and results
 
@@ -53,6 +59,35 @@ The build produced `Win64\Debug\PresenterAssistant.exe` and
 
 `msbuild.exe` was not found on PATH or under the searched RAD Studio
 installation, so no Delphi-compatible MSBuild project build was attempted.
+
+## PA-004A exact commands and observed results
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -EWin64\Debug -NUWin64\Debug PresenterAssistant.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`; the application
+compiled with `Domain\PADomainTypes.pas`.
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -EWin64\Debug\tests -NUWin64\Debug\tests tests\PADomainTests.dpr'
+& 'E:\Programming\Tool\DemoFlow\Win64\Debug\tests\PADomainTests.exe'
+```
+
+Result: The first invocation without a unit search path failed with
+`F1026 File not found: '..\Domain\PADomainTypes.pas'`. The harness was then
+compiled and run with the corrected command:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UDomain -EWin64\Debug\tests -NUWin64\Debug\tests tests\PADomainTests.dpr'
+& 'E:\Programming\Tool\DemoFlow\Win64\Debug\tests\PADomainTests.exe'
+```
+
+Result: **success**. The corrected harness compiled and all boundary, offset,
+clipping, and default-state tests passed with exit code `0`.
+
+The PA-004A tests were run in this session. No Delphi IDE build or manual
+application runtime test was performed in this session.
 
 ## Collected environment evidence
 

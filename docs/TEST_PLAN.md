@@ -12,6 +12,10 @@
 5. **Manual runtime tests:** actual PowerPoint, playback endpoint, browser
    windows, display layout, presenter hardware, and Windows focus behavior.
 
+PA-004A domain harness tests cover percentage boundaries, positive and negative
+offsets, clipping, and default unknown/unavailable state records. The harness
+uses only Delphi RTL and exits nonzero on assertion failure.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and
