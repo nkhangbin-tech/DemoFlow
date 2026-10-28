@@ -127,6 +127,21 @@ Implementation record:
   and presentation environment. PA-006B must not start until those results
   are reviewed.
 
+### PA-006B1 — Reusable PowerPoint STA Polling Monitor
+
+- Files: `PowerPoint\PAPowerPointMonitor.pas`,
+  `tools\PAPowerPointMonitorProbe.dpr`, and focused monitor tests.
+- Acceptance: a dedicated STA worker owns COM, publishes coalesced immutable
+  latest snapshots, distinguishes disconnected/no-show/known/unknown/
+  ambiguous/faulted states, enumerates every slideshow window, and stops
+  idempotently without callbacks into destroyed consumers.
+- The monitor remains read-only and is not integrated into the VCL
+  application in this task.
+
+### PA-006B2 — Integrate PowerPoint monitor into the VCL application
+
+- Depends on PA-006B1 and its runtime review. Not implemented.
+
 ### PA-006B — Production PowerPoint Attachment and Polling Monitor
 
 - Depends on PA-006A runtime review. Not implemented.

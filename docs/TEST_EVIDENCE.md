@@ -32,6 +32,10 @@
 - PA-006A source implementation: **Complete**
 - PA-006A Win64 probe build: **Completed**
 - PA-006A PowerPoint runtime verification: **Pending developer test**
+- PA-006B1 source implementation: **Complete**
+- PA-006B1 monitor harness build/run: **Completed; exit code 0**
+- PA-006B1 focused monitor tests: **Completed; exit code 0**
+- PA-006B1 live slideshow runtime verification: **Pending developer test**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -249,6 +253,24 @@ reported `ATTACHED PowerPoint.Application` and
 This verifies only the no-instance/retry path. It does not verify live
 PowerPoint slideshow attachment. The developer must run the manual cases in
 [POWERPOINT_COM_PROBE.md](POWERPOINT_COM_PROBE.md) before PA-006B.
+
+## PA-006B1 monitor evidence
+
+The reusable monitor harness was built with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UPowerPoint -EWin64\Debug\monitor-tests -NUWin64\Debug\monitor-tests tools\PAPowerPointMonitorProbe.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+The harness ran for five seconds and reported
+`connected-no-show windows=0`, then `SUMMARY monitor_complete`, with process
+exit code `0`.
+
+The focused monitor harness was compiled and executed from the same output
+directory. It verified interval clamping, explicit state names, snapshot
+publication, bounded stop, and repeated stop; all tests passed with exit code
+`0`.
 
 ## Collected environment evidence
 

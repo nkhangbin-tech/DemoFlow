@@ -50,6 +50,12 @@ show position reads, connection loss, reattachment, and normal completion.
 The probe does not provide a hard timeout around an individual external COM
 call and does not use event sinks.
 
+PA-006B1 deterministic tests cover state-name mapping, safe interval clamping,
+initial snapshot publication, bounded stop, and repeated stop. The monitor
+probe uses the same worker implementation and covers real COM attachment,
+polling, slideshow transitions, and disconnection only when run by the
+developer with PowerPoint.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and

@@ -26,6 +26,8 @@
   complete; manual tray/lifecycle verification is pending.
 - **PA-006A COM probe:** Source implementation and no-PowerPoint runtime
   diagnostic complete; PowerPoint slideshow runtime verification is pending.
+- **PA-006B1 monitor:** Source implementation, monitor harness, and focused
+  tests complete; live monitor runtime verification is pending.
 - **Known PA-004B limitation:** Browser `titlePattern` is validated as a
   non-empty opaque pattern; regex syntax is intentionally not interpreted.
 
@@ -56,7 +58,8 @@ application test results.
 | PA-005A | Implementation | Complete pending developer verification | Application bootstrap, configuration loading, visible safe mode, and bounded logger shutdown |
 | PA-005B | Implementation | Complete pending developer verification | System tray, hide/restore, reload, explicit exit, and session-end shutdown |
 | PA-006A | Diagnostic tool | Complete pending developer verification | Standalone read-only PowerPoint COM attachment and slideshow polling probe |
-| PA-006B | Implementation | Not started | Production PowerPoint attachment and polling monitor; depends on PA-006A review |
+| PA-006B1 | Implementation | Complete pending developer verification | Reusable PowerPoint STA polling monitor |
+| PA-006B2 | Implementation | Not started | Integrate the polling monitor into the VCL application; depends on PA-006B1 |
 | PA-007 | Implementation | Not started | PowerPoint event monitoring and reconciliation; depends on PA-006B |
 
 PA-001 does not mark any application feature as implemented or tested.
