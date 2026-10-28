@@ -263,4 +263,5 @@ begin
     if ComInitialized then
       CoUninitialize;
   end;
+  readln;
 end.

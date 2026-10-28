@@ -56,6 +56,12 @@ probe uses the same worker implementation and covers real COM attachment,
 polling, slideshow transitions, and disconnection only when run by the
 developer with PowerPoint.
 
+PA-007A deterministic tests cover event sequence ordering, event invalidation,
+post-callback reconciliation, failed-poll unknown state, duplicate/out-of-order
+handling, and stable event names. The event probe uses the imported
+PowerPoint type library, an STA message pump, and a bounded event buffer.
+These tests do not prove live Office event delivery.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and
@@ -87,6 +93,13 @@ developer with PowerPoint.
 - Simulate `SlideShowNextSlide` before-transition notification and verify that
   the callback invalidates state and a later poll confirms the new slide.
 - Verify event loss and out-of-order polling do not advance the cursor wrongly.
+- PA-007A manual event cases cover `SlideShowBegin`, `SlideShowNextSlide`,
+  `SlideShowNextBuild`, `SlideShowNextClick`, `SlideShowEnd`, later reconciliation, event sink
+  shutdown, and PowerPoint disconnect. Use the procedure in
+  `docs\POWERPOINT_EVENT_PROBE.md`.
+- A polling result of `CurrentShowPosition=0` during a transition is
+  unavailable evidence, not a valid position; transient COM/RPC failures must
+  be reported as reconciliation failures or unavailable fields.
 
 ## Volume and delta cases
 

@@ -31,11 +31,15 @@
 - PA-005A developer IDE/runtime verification: **Pending**
 - PA-006A source implementation: **Complete**
 - PA-006A Win64 probe build: **Completed**
-- PA-006A PowerPoint runtime verification: **Pending developer test**
+- PA-006A PowerPoint runtime verification: **Developer-reported slideshow test complete; broader reconnect/termination cases remain pending**
 - PA-006B1 source implementation: **Complete**
 - PA-006B1 monitor harness build/run: **Completed; exit code 0**
 - PA-006B1 focused monitor tests: **Completed; exit code 0**
 - PA-006B1 live slideshow runtime verification: **Pending developer test**
+- PA-007A source implementation: **Complete**
+- PA-007A type-library import: **Completed from installed MSPPT.OLB**
+- PA-007A deterministic state tests: **Completed; exit code 0**
+- PA-007A live event delivery: **Pending developer test**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -118,6 +122,8 @@ application runtime test was performed in this session.
 ```
 
 Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+The required dedicated output is
+`Win64\Debug\event-probe\PAPowerPointEventProbe.exe`.
 
 ```powershell
 & $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UDomain;Config -EWin64\Debug\config-tests -NUWin64\Debug\config-tests tests\PAConfigurationTests.dpr'
@@ -250,9 +256,34 @@ reported `ATTACHED PowerPoint.Application` and
 `CONNECTED slideshowWindows=0` for a five-second run, followed by
 `SUMMARY probe_complete` and exit code `0`.
 
-This verifies only the no-instance/retry path. It does not verify live
-PowerPoint slideshow attachment. The developer must run the manual cases in
-[POWERPOINT_COM_PROBE.md](POWERPOINT_COM_PROBE.md) before PA-006B.
+This verifies the no-instance/retry path and the live attachment path below.
+The developer must still run the remaining manual cases in
+[POWERPOINT_COM_PROBE.md](POWERPOINT_COM_PROBE.md) before PA-006B is considered
+fully runtime-verified.
+
+### Developer-reported animated slideshow evidence
+
+The probe was rerun for 45 seconds while an animated slideshow was active.
+The developer reported exit code `0` and the following observed transitions:
+
+```text
+ATTACHED PowerPoint.Application
+CONNECTED slideshowWindows=0
+TRANSITION slideshow_started
+CONNECTED slideshowWindows=1 window=1 slideIndex=3 showPosition=0
+CONNECTED slideshowWindows=1 window=1 slideIndex=3 showPosition=3
+CONNECTED slideshowWindows=1 window=1 slideIndex=2 showPosition=0
+CONNECTED slideshowWindows=1 window=1 slideIndex=2 showPosition=2
+CONNECTED slideshowWindows=1 window=1 slideIndex=3 showPosition=0
+CONNECTED slideshowWindows=1 window=1 slideIndex=3 showPosition=3
+CONNECTED slideshowWindows=1 window=1 slideIndex=4 showPosition=0
+CONNECTED slideshowWindows=1 window=1 slideIndex=4 showPosition=4
+```
+
+This confirms live attachment, slideshow start, slide navigation, and that
+`SlideIndex` and `CurrentShowPosition` are reported as separate values.
+Because this is developer-observed runtime evidence, it is not a substitute
+for the remaining reconnect, slideshow termination, and multiple-window cases.
 
 ## PA-006B1 monitor evidence
 
@@ -291,6 +322,87 @@ runtime startup, live PowerPoint no-show/show/disconnect transitions, multiple
 slideshow-window ambiguity, tray tooltip/status updates while the form is
 hidden, and shutdown/session-end behavior. No runtime claim is made for those
 cases here.
+
+## PA-007A PowerPoint event probe evidence
+
+The installed PowerPoint type library was imported with RAD Studio 12.3:
+
+```powershell
+& 'D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\tlibimp.exe' -P '-DE:\Programming\Tool\DemoFlow\tools\generated' 'C:\Program Files\Microsoft Office\root\Office16\MSPPT.OLB'
+```
+
+Result: **success**. The importer generated the project-owned
+`PowerPoint_TLB.pas`, `Office_TLB.pas`, and `VBIDE_TLB.pas` declarations.
+The imported declarations identify the PowerPoint `EApplication` outgoing
+interface and the verified event signatures documented in
+[POWERPOINT_EVENT_PROBE.md](POWERPOINT_EVENT_PROBE.md).
+
+The standalone event probe was built with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -Utools;tools\generated -Itools;tools\generated -EWin64\Debug\event-probe\ tools\PAPowerPointEventProbe.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+
+The deterministic event-state harness was built and run with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -Utools -Itools -EWin64\Debug2\ tests\PAEventProbeStateTests.dpr && Win64\Debug2\PAEventProbeStateTests.exe'
+```
+
+Result: **success**, exit code `0`; all thirteen deterministic tests passed,
+including event-source loss and idempotent shutdown/unsubscription state.
+
+The probe was run for five seconds while an existing PowerPoint instance was
+available but no slideshow was active:
+
+```text
+START durationSeconds=5 eventInterface=EApplication
+EVENT_SINK_CONNECTED interface=EApplication
+RECONCILIATION_COMPLETED windows=0 slideIndex=0 hasSlideIndex=False showPosition=0 hasShowPosition=False
+EVENT_SINK_DISCONNECTED
+SUMMARY probe_complete pollSequence=10 droppedEvents=0
+```
+
+Process exit code: `0`. This confirms existing-instance attachment,
+connection-point setup, STA message pumping, read-only reconciliation, and
+idempotent normal unsubscription. It does not prove that live PowerPoint
+fires every event; the slideshow event procedure in
+[POWERPOINT_EVENT_PROBE.md](POWERPOINT_EVENT_PROBE.md) remains pending
+developer verification.
+
+The event probe has a distinctive startup header and records
+`SlideShowNextClick` separately from `SlideShowNextBuild`. It treats
+`showPosition=0` as unavailable and reports the condition explicitly rather
+than treating zero as a valid position.
+
+The production polling monitor still copies `CurrentShowPosition` into its
+snapshot and marks the field available without applying the event-probe
+zero-value check. This is a separately identified improvement for the
+production monitor; it was not changed under PA-007A-FIX. Its existing
+per-observation exception handling publishes explicit fault/window error
+text for transient COM/RPC failures rather than fabricating a slide.
+
+The corrected dedicated probe was run with:
+
+```powershell
+& 'E:\Programming\Tool\DemoFlow\Win64\Debug\event-probe\PAPowerPointEventProbe.exe' 5
+```
+
+Observed output included:
+
+```text
+Presenter Assistant PowerPoint COM EVENT diagnostic probe
+POWERPOINT_UNAVAILABLE GetActiveObject hresult=800401E3
+EVENT_SINK_CONNECTED interface=EApplication
+RECONCILIATION_COMPLETED windows=0 slideIndex=0 hasSlideIndex=False showPosition=0 hasShowPosition=False
+EVENT_SINK_DISCONNECTED
+SUMMARY probe_complete pollSequence=10 droppedEvents=0
+```
+
+The process exited with code `0`. This is a no-slideshow/attachment smoke
+test only; it does not claim live delivery of the five PowerPoint events.
 
 ### PowerPoint disconnect cleanup fix
 

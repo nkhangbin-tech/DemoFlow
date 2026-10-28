@@ -13,7 +13,8 @@ evidence as a unit-test pass.
 | PA-005 | Tray UI and lifecycle/safe mode | PA-004B, PA-004C |
 | PA-006A | Standalone PowerPoint COM diagnostic probe | PA-003 |
 | PA-006B | Production PowerPoint attachment and polling monitor | PA-006A |
-| PA-007 | PowerPoint events and reconciliation | PA-006B |
+| PA-007A | Standalone PowerPoint event diagnostic probe | PA-006B |
+| PA-007B | Production event integration and reconciliation | PA-007A |
 | PA-008 | Core Audio endpoint discovery/read/write | PA-003, PA-004A, PA-004C |
 | PA-009 | Volume rules and delta mode | PA-004A, PA-004B, PA-008 |
 | PA-010 | Window Tracker | PA-004A, PA-004B, PA-005 |
@@ -21,7 +22,7 @@ evidence as a unit-test pass.
 | PA-012 | Configurable Win+Tab mapping | PA-011, PA-005 |
 | PA-013 | JSON Sequence Engine | PA-004A, PA-004B |
 | PA-014 | Scenario Manager integration | PA-006, PA-009, PA-010, PA-013 |
-| PA-015 | End-to-end tests, recovery, release preparation | PA-007, PA-012, PA-014 |
+| PA-015 | End-to-end tests, recovery, release preparation | PA-007B, PA-012, PA-014 |
 
 ## Task contracts
 
@@ -153,9 +154,23 @@ Implementation record:
 
 - Depends on PA-006A runtime review. Not implemented.
 
-### PA-007 — PowerPoint Event Monitoring and State Reconciliation
+### PA-007A — Standalone PowerPoint COM Event Diagnostic Probe
 
-- Depends on a verified PA-006B polling monitor. Not implemented.
+- Depends on the verified PA-006B polling monitor. Implemented as a standalone
+  diagnostic probe only.
+- The probe uses declarations generated from the installed `MSPPT.OLB`,
+  subscribes through the verified `EApplication` connection point, records
+  events in bounded memory, pumps an STA message queue, and reconciles with
+  later read-only polling.
+- No main application source or production monitor behavior is changed.
+- Live event delivery, event timing, PowerPoint disconnect, and slideshow
+  termination remain developer verification items.
+
+### PA-007B — Integrate verified PowerPoint events
+
+- Depends on PA-007A source review and live runtime verification. Not
+  implemented.
+- Polling remains the production authoritative fallback.
 
 ### PA-005 — Tray shell and lifecycle
 
