@@ -15,8 +15,9 @@ evidence as a unit-test pass.
 | PA-006B | Production PowerPoint attachment and polling monitor | PA-006A |
 | PA-007A | Standalone PowerPoint event diagnostic probe | PA-006B |
 | PA-007B | Production event integration and reconciliation | PA-007A |
-| PA-008 | Core Audio endpoint discovery/read/write | PA-003, PA-004A, PA-004C |
-| PA-009 | Volume rules and delta mode | PA-004A, PA-004B, PA-008 |
+| PA-008A | Read-only Core Audio diagnostic probe | PA-003 |
+| PA-008B | Production Core Audio endpoint service | PA-008A |
+| PA-009 | Volume rules and delta mode | PA-004A, PA-004B, PA-008B |
 | PA-010 | Window Tracker | PA-004A, PA-004B, PA-005 |
 | PA-011 | Input capture without suppression | PA-003, PA-004A |
 | PA-012 | Configurable Win+Tab mapping | PA-011, PA-005 |
@@ -207,16 +208,20 @@ Implementation record:
 - Evidence: event and poll correlation log; documented unsupported semantics.
 - Fallback: polling-only mode.
 
-### PA-008 — Core Audio endpoint
+### PA-008A — Read-only Core Audio diagnostic probe
 
-- Acceptance: enumerate default render endpoint and read/write master volume.
-- Automated check: fake endpoint adapter tests, scalar conversion tests,
-  callback non-reentrancy tests, and notification-unregister-before-release
-  tests.
-- Manual check: enumerate actual playback endpoints, change default device,
-  mute/unmute, and verify system output.
-- Evidence: endpoint IDs redacted as needed, before/after scalar readings.
-- Fallback: audio automation disabled with explicit diagnostic.
+- Implements `tools\PACoreAudioProbe.dpr` and the reusable declarations in
+  `CoreAudio\PACoreAudioApi.pas`.
+- Enumerates active render endpoints, identifies the default console endpoint,
+  and reads endpoint master scalar/mute state without mutation.
+- Build and pure conversion tests are complete; real endpoint review remains
+  developer verification.
+
+### PA-008B — Production Core Audio endpoint service
+
+- Depends on successful PA-008A runtime review.
+- Will own Core Audio COM interfaces and endpoint notifications on the
+  dedicated STA worker. Not started.
 
 ### PA-009 — Volume rules and delta mode
 

@@ -2,9 +2,9 @@
 
 ## Current baseline
 
-- **Task:** PA-007B
-- **Task type:** Production PowerPoint COM event integration
-- **Status:** Source implementation, Win64 builds, and deterministic harnesses complete; integrated live runtime verification is pending.
+- **Task:** PA-008A
+- **Task type:** Read-only Windows Core Audio diagnostic probe
+- **Status:** Probe source, verified declarations, Win64 build, pure tests, and local endpoint smoke test complete; developer review remains required.
 - **Workspace state:** Git repository on branch `main`; minimal application project now exists.
 - **Historical baseline:** PA-001 recorded the workspace as not yet initialized as Git. That historical observation is preserved in the audit.
 - **Primary target:** Win64.
@@ -33,6 +33,11 @@
   tests complete; live monitor runtime verification is pending.
 - **PA-006B2 monitor integration:** Source implementation and Win64 build
   complete; VCL/runtime verification is pending.
+- **PA-008A Core Audio probe:** Source implementation, verified MMDevice/
+  endpoint-volume declarations, Win64 build, pure tests, and endpoint
+  enumeration smoke test complete. The diagnostic and test executables have
+  distinct entry points and output paths; developer confirmation of identity
+  and non-mutation is pending.
 - **Known PA-004B limitation:** Browser `titlePattern` is validated as a
   non-empty opaque pattern; regex syntax is intentionally not interpreted.
 
@@ -40,14 +45,13 @@
 
 RAD Studio compiler binaries for Win32 and Win64 are installed and report
 compiler version 36.0. VCL, RTL JSON, COM, and Windows API source units are
-present. The workspace contains the minimal Delphi VCL project, the PA-004A
-domain unit, and its console test harness. No runtime service or feature
-implementation exists.
+present. The workspace contains the minimal Delphi VCL project, the PowerPoint
+monitor/event integration, and the standalone Core Audio diagnostic probe.
 
-PowerPoint's 64-bit executable was found, but no live automation test was run.
-No audio device was verified by the available WMI probe; direct Core Audio
-enumeration remains required. These are environment observations only, not
-application test results.
+PowerPoint's 64-bit executable and direct Core Audio endpoint enumeration have
+been exercised by developer-reported or local diagnostic evidence as recorded
+in the task-specific evidence sections. Production Core Audio service behavior
+and volume rules remain unimplemented.
 
 ## Work items
 
@@ -67,5 +71,8 @@ application test results.
 | PA-006B2 | Implementation | Complete pending developer verification | Integrate the polling monitor into the VCL application, timer polling, tray status, and bounded shutdown |
 | PA-007A | Diagnostic tool | Accepted by developer report | Verify PowerPoint event interface, STA message pump, event timing, and polling reconciliation |
 | PA-007B | Implementation | Complete pending developer verification | Integrate verified events into the production monitor; polling remains authoritative |
+| PA-008A | Diagnostic tool | Complete pending developer verification | Enumerate active render endpoints and read default-console endpoint volume/mute without mutation |
+| PA-008B | Implementation | Not started | Production Core Audio endpoint service; depends on PA-008A runtime review |
+| PA-009 | Implementation | Not started | Volume rules and delta mode; depends on PA-008B |
 
 PA-001 does not mark any application feature as implemented or tested.

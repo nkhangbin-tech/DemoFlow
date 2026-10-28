@@ -43,6 +43,16 @@
 - PA-007B production monitor source/build: **Completed; integrated live test pending**
 - PA-007B deterministic monitor tests: **Completed; exit code 0**
 - PA-007B main VCL build: **Completed; exit code 0**
+- PA-008A source implementation: **Complete**
+- PA-008A Core Audio declarations: **Verified against Windows SDK headers**
+- PA-008A pure helper tests: **Completed; exit code 0**
+- PA-008A Win64 probe build: **Completed; exit code 0**
+- PA-008A local endpoint smoke test: **Completed; 3 active render endpoints,
+  default console endpoint, scalar, and mute state read successfully**
+- PA-008A developer identity/non-mutation review: **Pending**
+- PA-008A executable separation: **Confirmed; diagnostic output contains
+  endpoint records, while `PASS:` output is confined to the separate test
+  executable**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -464,6 +474,71 @@ event counters.
 The production monitor has not yet been run through the developer's complete
 integrated slideshow, animation, PowerPoint-exit, and reattachment procedure.
 Those are runtime checks and are not claimed by these deterministic results.
+
+### PA-008A Core Audio probe evidence
+
+The probe was built with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UCoreAudio -EWin64\Debug\audio-probe -NUWin64\Debug\audio-probe tools\PACoreAudioProbe.dpr'
+```
+
+Compiler result: Delphi Win64 compiler version `36.0`, build succeeded, exit
+code `0`.
+
+The pure helper harness was built and run with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UCoreAudio -EWin64\Debug\audio-tests -NUWin64\Debug\audio-tests tests\PACoreAudioProbeTests.dpr && Win64\Debug\audio-tests\PACoreAudioProbeTests.exe'
+```
+
+Result: 7 checks passed, exit code `0`, including scalar values `0.0`, `0.5`,
+and `1.0`, out-of-range rejection, and explicit endpoint-state naming.
+
+The local read-only probe run reported three active render endpoints, found the
+default console endpoint, and read scalar/mute state for all three. The actual
+diagnostic executable output was:
+
+```text
+PROBE_START name=PACoreAudioProbe
+Presenter Assistant Windows Core Audio diagnostic probe
+Read-only diagnostic; this utility will not change volume or mute state.
+COM_INITIALIZED
+DEFAULT_CONSOLE_ENDPOINT={0.0.0.00000000}.{f90bae51-14d4-48fe-8115-a8d41277e786}
+ENDPOINT_COUNT=3
+ENDPOINT index=0
+  FRIENDLY_NAME=Headset Earphone (SRS-XB32 Hands-Free AG Audio)
+  MASTER_VOLUME_SCALAR=0.112
+  MASTER_VOLUME_DISPLAY_PERCENT=11
+  MUTED=False
+ENDPOINT index=1
+  FRIENDLY_NAME=LG ULTRAFINE (NVIDIA High Definition Audio)
+  MASTER_VOLUME_SCALAR=0.380
+  MASTER_VOLUME_DISPLAY_PERCENT=38
+  MUTED=False
+ENDPOINT index=2
+  FRIENDLY_NAME=Speakers (SRS-XB32 Stereo)
+  MASTER_VOLUME_SCALAR=0.228
+  MASTER_VOLUME_DISPLAY_PERCENT=23
+  MUTED=False
+SUMMARY comInitialized=True endpointFailures=0 defaultFound=True
+PROBE_COMPLETE status=success
+```
+
+The probe exited with code `0`. This is direct endpoint enumeration evidence
+from the current machine, not a claim that every target machine has an
+accessible endpoint. The developer must still compare the reported default
+friendly name and mute/volume state with Windows Sound settings and confirm
+that no state changed.
+
+The observed `PASS:` output is not diagnostic output. It is emitted by
+`tests\PACoreAudioProbeTests.dpr`, whose executable is
+`Win64\Debug\audio-tests\PACoreAudioProbeTests.exe`. The diagnostic entry point
+is `tools\PACoreAudioProbe.dpr`, built as
+`Win64\Debug\audio-probe\PACoreAudioProbe.exe`; its output begins with
+`PROBE_START` and contains `ENDPOINT_COUNT`, `ENDPOINT`, and `SUMMARY` records.
+The separate test executable was also rebuilt and exited with code `0`; its
+`PASS:` output is not live endpoint evidence.
 
 ## Collected environment evidence
 

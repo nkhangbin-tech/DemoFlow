@@ -62,6 +62,15 @@ handling, and stable event names. The event probe uses the imported
 PowerPoint type library, an STA message pump, and a bounded event buffer.
 These tests do not prove live Office event delivery.
 
+PA-008A deterministic tests cover scalar-to-display conversion at zero,
+midrange, and maximum values, explicit rejection of out-of-range values, and
+endpoint-state naming. The Core Audio probe performs only read operations.
+Endpoint enumeration, default-device identity, scalar, mute state, and
+non-mutation require the developer's actual Windows runtime test.
+The diagnostic executable and pure test harness must be built and run to
+distinct output directories; `PASS:` output is test evidence only and never
+live endpoint evidence.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and
@@ -135,10 +144,16 @@ These tests do not prove live Office event delivery.
 - Verify partial `SendInput`, injected feedback, modifier key-up cleanup,
   repeated key-down, disable, unhook, and repeated shutdown.
 
-## Core Audio service cases
+## Core Audio probe and service cases
 
-- Enumerate actual default render endpoints, read/write master volume, and
-  receive endpoint replacement/loss notifications.
+- Run PA-008A and confirm active render endpoint count, endpoint IDs, friendly
+  names, state, default-console identity, scalar, display conversion, and mute
+  state.
+- Confirm unavailable values are labelled unavailable and no volume or mute
+  operation occurs.
+
+- PA-008B will enumerate actual default render endpoints, read/write master
+  volume, and receive endpoint replacement/loss notifications.
 - Verify callback unregister occurs before COM release and no callback reaches
   freed state.
 - Verify callbacks never block, re-enter endpoint operations, or evaluate rules.
@@ -157,6 +172,6 @@ IDs. Do not record URL query strings or unnecessary personal information.
 
 ## Environment blockers
 
-The PA-001 WMI sound-device query returned no rows. This is inconclusive; PA-008
-must enumerate Core Audio render endpoints directly. Build and runtime evidence
-remain pending until PA-003 exists.
+The PA-001 WMI sound-device query returned no rows. This is inconclusive;
+PA-008A enumerates Core Audio render endpoints directly. PA-008B and runtime
+write/notification behavior remain pending.
