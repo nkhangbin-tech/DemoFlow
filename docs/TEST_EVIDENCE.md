@@ -29,6 +29,9 @@
 - PA-005A automated bootstrap harness: **Not added; startup is VCL-owned and
   requires manual IDE/runtime verification**
 - PA-005A developer IDE/runtime verification: **Pending**
+- PA-006A source implementation: **Complete**
+- PA-006A Win64 probe build: **Completed**
+- PA-006A PowerPoint runtime verification: **Pending developer test**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -207,6 +210,45 @@ Regression harnesses were compiled and executed from `Win64\Debug2`:
 
 PA-005B manual tray, minimize, ordinary-close, reload-menu, explicit-exit,
 and Windows session-end checks remain **pending developer verification**.
+
+## PA-006A probe build and no-PowerPoint evidence
+
+The standalone probe was built with:
+
+```powershell
+New-Item -ItemType Directory -Path 'E:\Programming\Tool\DemoFlow\Win64\Debug\tools' -Force
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -EWin64\Debug\tools -NUWin64\Debug\tools tools\PAPowerPointProbe.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+Output executable:
+`Win64\Debug\tools\PAPowerPointProbe.exe`.
+
+The probe was also run for five seconds without a running PowerPoint
+automation instance:
+
+```powershell
+& 'E:\Programming\Tool\DemoFlow\Win64\Debug\tools\PAPowerPointProbe.exe' 5
+```
+
+Observed result: repeated
+`UNAVAILABLE PowerPoint.Application GetActiveObject hresult=800401E3`,
+then `SUMMARY probe_complete`; process exit code `0`.
+
+The attachment path was then changed from Delphi's exception-raising
+`GetActiveOleObject` helper to the Windows `GetActiveObject` HRESULT API.
+This prevents the expected no-instance condition from appearing as an
+`EOleSysError` first-chance exception in the Delphi debugger.
+
+During live attachment testing, the dispatch was also corrected to use an
+explicit `varDispatch` variant with retained COM ownership. The probe then
+reported `ATTACHED PowerPoint.Application` and
+`CONNECTED slideshowWindows=0` for a five-second run, followed by
+`SUMMARY probe_complete` and exit code `0`.
+
+This verifies only the no-instance/retry path. It does not verify live
+PowerPoint slideshow attachment. The developer must run the manual cases in
+[POWERPOINT_COM_PROBE.md](POWERPOINT_COM_PROBE.md) before PA-006B.
 
 ## Collected environment evidence
 

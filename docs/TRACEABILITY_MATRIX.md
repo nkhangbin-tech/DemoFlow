@@ -3,11 +3,11 @@
 | Requirement | Design location | Implementation task | Verification |
 |---|---|---|---|
 | VCL tray application | ARCHITECTURE, PROJECT_SPEC | PA-003, PA-005 | Win64 build and tray manual test |
-| PowerPoint attach/poll | ARCHITECTURE | PA-006 | COM runtime test |
+| PowerPoint attach/poll | ARCHITECTURE | PA-006A, PA-006B | Standalone COM probe runtime test, then production monitor tests |
 | Event reconciliation | ARCHITECTURE | PA-007 | Event/poll and exit tests |
 | Separate slide/show position | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-006 | Snapshot unit/runtime evidence |
 | Pre-transition event handling | ARCHITECTURE | PA-007 | Event invalidation/post-poll test |
-| Explicit build uncertainty | CONFIGURATION_SCHEMA, TEST_PLAN | PA-006, PA-007, PA-013 | Verified/unavailable/ambiguous build tests |
+| Explicit build uncertainty | CONFIGURATION_SCHEMA, TEST_PLAN | PA-006B, PA-007, PA-013 | Verified/unavailable/ambiguous build tests |
 | Default endpoint master volume | ARCHITECTURE | PA-008 | Core Audio endpoint runtime test |
 | Domain state contracts | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-004A | Domain harness and default-state tests |
 | Effective volume arithmetic | CONFIGURATION_SCHEMA | PA-004A | Boundary, offset, and clipping tests |
@@ -29,6 +29,7 @@
 | No auto-start/admin | PROJECT_SPEC | PA-003, PA-015 | Packaging review |
 | Application bootstrap and safe mode | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-005A | VCL startup status, missing/invalid configuration, logger shutdown |
 | Tray lifecycle and explicit exit | ARCHITECTURE | PA-005B | Tray/manual hide, restore, reload, exit, and session-end tests |
+| PowerPoint slide/show observations | ARCHITECTURE | PA-006A, PA-006B | Probe and production polling evidence |
 
 Each row requires both automated evidence where possible and the specified
 runtime evidence for hardware/Office behavior.

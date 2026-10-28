@@ -11,8 +11,9 @@ evidence as a unit-test pass.
 | PA-004B | JSON configuration loading, validation, and saving | PA-004A |
 | PA-004C | Logging and log redaction | PA-004A |
 | PA-005 | Tray UI and lifecycle/safe mode | PA-004B, PA-004C |
-| PA-006 | Minimal PowerPoint attachment and polling | PA-003, PA-004A, PA-004C |
-| PA-007 | PowerPoint events and reconciliation | PA-006 |
+| PA-006A | Standalone PowerPoint COM diagnostic probe | PA-003 |
+| PA-006B | Production PowerPoint attachment and polling monitor | PA-006A |
+| PA-007 | PowerPoint events and reconciliation | PA-006B |
 | PA-008 | Core Audio endpoint discovery/read/write | PA-003, PA-004A, PA-004C |
 | PA-009 | Volume rules and delta mode | PA-004A, PA-004B, PA-008 |
 | PA-010 | Window Tracker | PA-004A, PA-004B, PA-005 |
@@ -115,6 +116,25 @@ Implementation record:
 - PA-005B remains pending developer IDE/runtime verification; no automation
   service is started by the tray shell.
 
+### PA-006A — Standalone PowerPoint COM Diagnostic Probe
+
+- Files: `tools\PAPowerPointProbe.dpr`,
+  `docs\POWERPOINT_COM_PROBE.md`.
+- Acceptance: attach only to an existing late-bound PowerPoint COM object,
+  enumerate slideshow windows, report separate slide index and show position,
+  retry unavailable connections, and exit normally without modifying Office.
+- Runtime compatibility requires developer testing with the installed Office
+  and presentation environment. PA-006B must not start until those results
+  are reviewed.
+
+### PA-006B — Production PowerPoint Attachment and Polling Monitor
+
+- Depends on PA-006A runtime review. Not implemented.
+
+### PA-007 — PowerPoint Event Monitoring and State Reconciliation
+
+- Depends on a verified PA-006B polling monitor. Not implemented.
+
 ### PA-005 — Tray shell and lifecycle
 
 - Acceptance: tray status, diagnostics, enable/disable, and safe shutdown work.
@@ -124,7 +144,7 @@ Implementation record:
 - Evidence: lifecycle log and process/service inspection.
 - Fallback: visible diagnostic state and disabled automation.
 
-### PA-006 — PowerPoint attachment and polling
+### PA-006B — Production PowerPoint attachment and polling monitor
 
 - Acceptance: attach only to an existing instance, distinguish no-show/show,
   report slide index and show position separately, enforce the configured
@@ -135,7 +155,7 @@ Implementation record:
 - Evidence: sanitized COM state log and observed slide values.
 - Fallback: disconnected/show-unknown state; no routing.
 
-### PA-007 — Events and reconciliation
+### PA-007 — PowerPoint events and reconciliation
 
 - Acceptance: verified type-library events are optional accelerators; polling
 - reconciles missed events; pre-transition events invalidate state rather than

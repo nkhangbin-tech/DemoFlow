@@ -43,6 +43,13 @@ active-configuration preservation, explicit Exit, tray removal, bounded logger
 shutdown, and Windows logoff/shutdown handling. These checks require the VCL
 application and are not claimed by the console harnesses.
 
+PA-006A is a standalone diagnostic runtime check, not a production-service
+test. It verifies COM initialization, existing-instance attachment, repeated
+unavailable reporting, slideshow-window enumeration, distinct slide index and
+show position reads, connection loss, reattachment, and normal completion.
+The probe does not provide a hard timeout around an individual external COM
+call and does not use event sinks.
+
 ## Deterministic configuration and sequence cases
 
 - Accept only integer `schemaVersion: 1`; reject `0`, `1.1`, strings, and
