@@ -77,11 +77,13 @@ those declarations.
 
 ## PowerPoint polling and event reconciliation
 
-The first PowerPoint implementation uses polling in its STA worker. The worker
-attaches to an existing instance, reads `SlideShowWindows`, `View.Slide`,
-`SlideIndex`, and `CurrentShowPosition`, then releases temporary references.
-Polling cadence and COM timeout behavior are implementation constants, not
-scenario values.
+The PowerPoint adapter uses polling as its authoritative reconciliation source
+and subscribes to the verified `EApplication` event connection point as an
+accelerator. Both the generated event wrapper and all PowerPoint COM
+interfaces remain owned by the same STA worker. The worker attaches only to an
+existing instance, reads `SlideShowWindows`, `View.Slide`, `SlideIndex`, and
+`CurrentShowPosition`, then releases temporary references. Polling cadence and
+COM timeout behavior are implementation constants, not scenario values.
 
 States are `Disconnected`, `ConnectedNoShow`, `ShowKnown`, `ShowUnknown`, and
 `Faulted`. Modal dialogs, RPC/COM errors, terminated shows, and stale snapshots
@@ -90,12 +92,24 @@ The controller retains the last valid context for browser volume evaluation
 until its configured freshness limit; after that it is stale and cannot drive
 automatic routing or entry-specific volume matching.
 
-Event monitoring is an optional accelerator only after the actual PowerPoint
-type library, connection points, event signatures, and event delivery have
-been verified. `SlideShowNextSlide` is a pre-transition notification, so its
-handler records an invalidation and requests a fresh poll after the event; it
-does not publish the announced slide as current. Polling remains the
-reconciliation source of truth and detects missed events.
+The verified event callbacks record only a bounded event sequence, timestamp,
+event name, and reconciliation request; they do not call COM, log
+synchronously, or update VCL state. The STA pumps its Windows message queue so
+COM events can be delivered, and reconciliation runs after callbacks return.
+`SlideShowNextSlide` and `SlideShowNextBuild` are pre-transition notifications,
+so neither publishes the announced slide or an animation build as current.
+Build and next-click counters are diagnostic event counts, not authoritative
+sequence positions. Polling remains the reconciliation source of truth and
+detects missed events.
+
+An observed `CurrentShowPosition` of zero, or a failed property read, is
+unavailable. The adapter preserves independently valid slide-index data,
+marks the show position unavailable, and publishes a later poll when valid
+data returns. A COM/RPC failure invalidates the connection and cached
+observation, unadvises the event sink before releasing its source, and retries
+attachment on the bounded polling cadence. A successful reconnect is not
+reported until a new event sink is connected and a fresh observation is
+published.
 
 ## Synchronous input boundary
 

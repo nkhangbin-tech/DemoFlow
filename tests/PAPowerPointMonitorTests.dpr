@@ -16,12 +16,19 @@ end;
 var
   Monitor: TPowerPointMonitor;
   Snapshot: TPowerPointMonitorSnapshot;
+  Position: Integer;
 begin
   try
     Check(PowerPointMonitorStateName(pmsDisconnected) = 'disconnected',
       'disconnected state name');
     Check(PowerPointMonitorStateName(pmsAmbiguous) = 'ambiguous',
       'ambiguous state name');
+    Check(not TryGetValidShowPosition(0, Position) and (Position = 0),
+      'zero show position is unavailable');
+    Check(not TryGetValidShowPosition(-1, Position) and (Position = 0),
+      'negative show position is unavailable');
+    Check(TryGetValidShowPosition(3, Position) and (Position = 3),
+      'later valid show position restores availability');
     Monitor := TPowerPointMonitor.Create(10);
     try
       Check(Monitor.IntervalMs = 100, 'poll interval is safely clamped');

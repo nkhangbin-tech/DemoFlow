@@ -4,9 +4,9 @@
 |---|---|---|---|
 | VCL tray application | ARCHITECTURE, PROJECT_SPEC | PA-003, PA-005 | Win64 build and tray manual test |
 | PowerPoint attach/poll | ARCHITECTURE | PA-006A, PA-006B1, PA-006B2 | Standalone COM probe, monitor harness, then integrated monitor tests |
-| Event reconciliation | ARCHITECTURE | PA-007A, PA-007B | Standalone event/poll probe and later production integration |
+| Event reconciliation | ARCHITECTURE | PA-007A, PA-007B | Standalone and production event/poll reconciliation; live production delivery pending |
 | Separate slide/show position | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-006 | Snapshot unit/runtime evidence |
-| Pre-transition event handling | ARCHITECTURE | PA-007A, PA-007B | Event invalidation/post-poll test; production integration deferred |
+| Pre-transition event handling | ARCHITECTURE | PA-007A, PA-007B | Event invalidation/post-poll tests; production monitor records events and polls afterward |
 | Explicit build uncertainty | CONFIGURATION_SCHEMA, TEST_PLAN | PA-006B, PA-007A, PA-007B, PA-013 | Verified/unavailable/ambiguous build tests |
 | Default endpoint master volume | ARCHITECTURE | PA-008 | Core Audio endpoint runtime test |
 | Domain state contracts | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-004A | Domain harness and default-state tests |

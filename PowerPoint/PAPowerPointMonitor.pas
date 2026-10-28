@@ -5,7 +5,8 @@ interface
 uses
   System.Classes,
   System.SyncObjs,
-  System.SysUtils;
+  System.SysUtils,
+  PowerPoint_TLB;
 
 type
   TPowerPointMonitorState = (
@@ -34,6 +35,10 @@ type
     Windows: TArray<TPowerPointWindowSnapshot>;
     ErrorText: string;
     Sequence: UInt64;
+    EventSequence: UInt64;
+    LastEventName: string;
+    BuildEventCount: UInt64;
+    NextClickEventCount: UInt64;
   end;
 
   TPowerPointMonitor = class
@@ -42,6 +47,29 @@ type
       TWorker = class(TThread)
       private
         FOwner: TPowerPointMonitor;
+        FPowerPoint: PowerPoint_TLB._Application;
+        FEvents: PowerPoint_TLB.TPowerPointApplication;
+        FReconciliationPending: Boolean;
+        FEventSequence: UInt64;
+        FLastEventName: string;
+        FBuildEventCount: UInt64;
+        FNextClickEventCount: UInt64;
+        procedure RecordEvent(const EventName: string; IsBuild,
+          IsNextClick: Boolean);
+        procedure OnSlideShowBegin(ASender: TObject;
+          const Wn: PowerPoint_TLB.SlideShowWindow);
+        procedure OnSlideShowNextSlide(ASender: TObject;
+          const Wn: PowerPoint_TLB.SlideShowWindow);
+        procedure OnSlideShowNextBuild(ASender: TObject;
+          const Wn: PowerPoint_TLB.SlideShowWindow);
+        procedure OnSlideShowNextClick(ASender: TObject;
+          const Wn: PowerPoint_TLB.SlideShowWindow;
+          const EventEffect: PowerPoint_TLB.Effect);
+        procedure OnSlideShowEnd(ASender: TObject;
+          const Pres: PowerPoint_TLB.PowerPointPresentation);
+        procedure DisconnectPowerPoint;
+        function TryAttachPowerPoint: Boolean;
+        procedure CopyEventState(var Snapshot: TPowerPointMonitorSnapshot);
       protected
         procedure Execute; override;
       public
@@ -70,6 +98,8 @@ type
   end;
 
 function PowerPointMonitorStateName(State: TPowerPointMonitorState): string;
+function TryGetValidShowPosition(Candidate: Integer;
+  out Position: Integer): Boolean;
 
 implementation
 
@@ -92,6 +122,17 @@ begin
   else
     Result := 'stopped';
   end;
+
+end;
+
+function TryGetValidShowPosition(Candidate: Integer;
+  out Position: Integer): Boolean;
+begin
+  Result := Candidate > 0;
+  if Result then
+    Position := Candidate
+  else
+    Position := 0;
 end;
 
 function DispatchVariant(const Dispatch: IDispatch): OleVariant;
@@ -131,6 +172,115 @@ begin
   except
     on E: Exception do
       FOwner.PublishFault(E.ClassName + ': ' + E.Message);
+  end;
+end;
+
+procedure TPowerPointMonitor.TWorker.RecordEvent(const EventName: string;
+  IsBuild, IsNextClick: Boolean);
+begin
+  Inc(FEventSequence);
+  FLastEventName := EventName;
+  FReconciliationPending := True;
+  if IsBuild then
+    Inc(FBuildEventCount);
+  if IsNextClick then
+    Inc(FNextClickEventCount);
+end;
+
+procedure TPowerPointMonitor.TWorker.OnSlideShowBegin(ASender: TObject;
+  const Wn: SlideShowWindow);
+begin
+  RecordEvent('SlideShowBegin', False, False);
+end;
+
+procedure TPowerPointMonitor.TWorker.OnSlideShowNextSlide(ASender: TObject;
+  const Wn: SlideShowWindow);
+begin
+  RecordEvent('SlideShowNextSlide', False, False);
+end;
+
+procedure TPowerPointMonitor.TWorker.OnSlideShowNextBuild(ASender: TObject;
+  const Wn: SlideShowWindow);
+begin
+  RecordEvent('SlideShowNextBuild', True, False);
+end;
+
+procedure TPowerPointMonitor.TWorker.OnSlideShowNextClick(ASender: TObject;
+  const Wn: SlideShowWindow; const EventEffect: Effect);
+begin
+  RecordEvent('SlideShowNextClick', False, True);
+end;
+
+procedure TPowerPointMonitor.TWorker.OnSlideShowEnd(ASender: TObject;
+  const Pres: PowerPointPresentation);
+begin
+  RecordEvent('SlideShowEnd', False, False);
+end;
+
+procedure TPowerPointMonitor.TWorker.CopyEventState(
+  var Snapshot: TPowerPointMonitorSnapshot);
+begin
+  Snapshot.EventSequence := FEventSequence;
+  Snapshot.LastEventName := FLastEventName;
+  Snapshot.BuildEventCount := FBuildEventCount;
+  Snapshot.NextClickEventCount := FNextClickEventCount;
+end;
+
+procedure TPowerPointMonitor.TWorker.DisconnectPowerPoint;
+begin
+  if FEvents <> nil then
+  begin
+    FEvents.OnSlideShowBegin := nil;
+    FEvents.OnSlideShowNextSlide := nil;
+    FEvents.OnSlideShowNextBuild := nil;
+    FEvents.OnSlideShowNextClick := nil;
+    FEvents.OnSlideShowEnd := nil;
+    try
+      FEvents.Disconnect;
+    except
+      on E: Exception do
+        FOwner.PublishFault('event sink disconnect failed: ' +
+          E.ClassName + ': ' + E.Message);
+    end;
+    FreeAndNil(FEvents);
+  end;
+  FPowerPoint := nil;
+  FReconciliationPending := False;
+end;
+
+function TPowerPointMonitor.TWorker.TryAttachPowerPoint: Boolean;
+var
+  ClassId: TCLSID;
+  Unknown: IUnknown;
+  ApplicationIntf: _Application;
+begin
+  Result := False;
+  if FEvents <> nil then
+    Exit(True);
+  if Failed(CLSIDFromProgID('PowerPoint.Application', ClassId)) then
+    Exit;
+  if Failed(GetActiveObject(ClassId, nil, Unknown)) then
+    Exit;
+  if Failed(Unknown.QueryInterface(IID__Application, ApplicationIntf)) then
+    Exit;
+  try
+    FPowerPoint := ApplicationIntf;
+    FEvents := TPowerPointApplication.Create(nil);
+    FEvents.OnSlideShowBegin := OnSlideShowBegin;
+    FEvents.OnSlideShowNextSlide := OnSlideShowNextSlide;
+    FEvents.OnSlideShowNextBuild := OnSlideShowNextBuild;
+    FEvents.OnSlideShowNextClick := OnSlideShowNextClick;
+    FEvents.OnSlideShowEnd := OnSlideShowEnd;
+    FEvents.AutoQuit := False;
+    FEvents.ConnectTo(FPowerPoint);
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      DisconnectPowerPoint;
+      FOwner.PublishFault('event sink attach failed: ' +
+        E.ClassName + ': ' + E.Message);
+    end;
   end;
 end;
 
@@ -260,19 +410,22 @@ procedure TPowerPointMonitor.WorkerLoop;
 var
   ComInitialized: Boolean;
   ComResult: HRESULT;
-  PowerPoint: OleVariant;
-  ClassId: TCLSID;
-  Unknown: IUnknown;
-  Dispatch: IDispatch;
   Snapshot, LastPublished: TPowerPointMonitorSnapshot;
   Windows, Window, View, Slide: OleVariant;
   Count, Index: Integer;
-  Changed, Attached, HasPublished: Boolean;
-  WaitResult: TWaitResult;
+  Changed, HasPublished: Boolean;
+  WakeHandle: THandle;
+  Msg: TMsg;
+  DispatchResult: DWORD;
 begin
   ComInitialized := False;
-  PowerPoint := Unassigned;
-  Attached := False;
+  FWorker.FPowerPoint := nil;
+  FWorker.FEvents := nil;
+  FWorker.FReconciliationPending := False;
+  FWorker.FEventSequence := 0;
+  FWorker.FLastEventName := '';
+  FWorker.FBuildEventCount := 0;
+  FWorker.FNextClickEventCount := 0;
   HasPublished := False;
   LastPublished := Default(TPowerPointMonitorSnapshot);
   try
@@ -299,25 +452,14 @@ begin
 
       Snapshot := Default(TPowerPointMonitorSnapshot);
       Snapshot.ObservedAt := Now;
-      if not Attached then
-      begin
-        if Succeeded(CLSIDFromProgID('PowerPoint.Application', ClassId)) and
-          Succeeded(GetActiveObject(ClassId, nil, Unknown)) and
-          Succeeded(Unknown.QueryInterface(
-            StringToGUID('{00020400-0000-0000-C000-000000000046}'),
-            Dispatch)) then
-        begin
-          PowerPoint := DispatchVariant(Dispatch);
-          Dispatch := nil;
-          Attached := True;
-        end;
-      end;
+      if FWorker.FEvents = nil then
+        FWorker.TryAttachPowerPoint;
 
-      if not Attached then
+      if FWorker.FEvents = nil then
         Snapshot.State := pmsDisconnected
       else
       try
-        Windows := PowerPoint.SlideShowWindows;
+        Windows := FWorker.FPowerPoint.SlideShowWindows;
         try
           Count := Windows.Count;
           Snapshot.WindowCount := Count;
@@ -345,7 +487,13 @@ begin
                     try
                       Snapshot.Windows[Index - 1].ShowPosition :=
                         View.CurrentShowPosition;
-                      Snapshot.Windows[Index - 1].HasShowPosition := True;
+                      Snapshot.Windows[Index - 1].HasShowPosition :=
+                        TryGetValidShowPosition(
+                          Snapshot.Windows[Index - 1].ShowPosition,
+                          Snapshot.Windows[Index - 1].ShowPosition);
+                      if not Snapshot.Windows[Index - 1].HasShowPosition then
+                        Snapshot.Windows[Index - 1].ErrorText :=
+                          'show position unavailable: zero';
                     except
                       on E: Exception do
                         Snapshot.Windows[Index - 1].ErrorText :=
@@ -379,10 +527,10 @@ begin
         begin
           Snapshot.State := pmsFaulted;
           Snapshot.ErrorText := E.ClassName + ': ' + E.Message;
-          ClearVariant(PowerPoint);
-          Attached := False;
+          FWorker.DisconnectPowerPoint;
         end;
       end;
+      FWorker.CopyEventState(Snapshot);
 
       Changed := not HasPublished or
         (Snapshot.State <> LastPublished.State);
@@ -390,6 +538,15 @@ begin
         Changed := Snapshot.WindowCount <> LastPublished.WindowCount;
       if not Changed then
         Changed := Snapshot.ErrorText <> LastPublished.ErrorText;
+      if not Changed then
+        Changed := Snapshot.EventSequence <> LastPublished.EventSequence;
+      if not Changed then
+        Changed := Snapshot.LastEventName <> LastPublished.LastEventName;
+      if not Changed then
+        Changed := Snapshot.BuildEventCount <> LastPublished.BuildEventCount;
+      if not Changed then
+        Changed := Snapshot.NextClickEventCount <>
+          LastPublished.NextClickEventCount;
       if not Changed then
         Changed := Length(Snapshot.Windows) <> Length(LastPublished.Windows);
       if not Changed and (Length(Snapshot.Windows) > 0) then
@@ -404,12 +561,20 @@ begin
         LastPublished := Snapshot;
         HasPublished := True;
       end;
-      WaitResult := FWakeEvent.WaitFor(FIntervalMs);
-      if WaitResult = wrSignaled then
-        FWakeEvent.ResetEvent;
+      WakeHandle := FWakeEvent.Handle;
+      DispatchResult := MsgWaitForMultipleObjects(1, WakeHandle,
+        False, FIntervalMs, QS_ALLINPUT);
+      if DispatchResult = WAIT_OBJECT_0 then
+        FWakeEvent.ResetEvent
+      else if DispatchResult = WAIT_OBJECT_0 + 1 then
+        while PeekMessage(Msg, 0, 0, 0, PM_REMOVE) do
+        begin
+          TranslateMessage(Msg);
+          DispatchMessage(Msg);
+        end;
     end;
   finally
-    ClearVariant(PowerPoint);
+    FWorker.DisconnectPowerPoint;
     if ComInitialized then
       CoUninitialize;
     FStoppedEvent.SetEvent;

@@ -100,6 +100,11 @@ These tests do not prove live Office event delivery.
 - A polling result of `CurrentShowPosition=0` during a transition is
   unavailable evidence, not a valid position; transient COM/RPC failures must
   be reported as reconciliation failures or unavailable fields.
+- PA-007B deterministic coverage verifies zero and failed-position handling,
+  restoration by a later valid position, and bounded monitor shutdown. The
+  PA-007A event-state harness covers event ordering and post-callback
+  reconciliation semantics. Integrated event delivery and reconnection require
+  the developer's live PowerPoint test.
 
 ## Volume and delta cases
 

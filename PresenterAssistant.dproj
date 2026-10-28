@@ -46,6 +46,7 @@
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
+        <DCC_UnitSearchPath>tools\generated;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
         <DCC_DependencyCheckOutputName>PresenterAssistant.exe</DCC_DependencyCheckOutputName>
@@ -91,6 +92,9 @@
         <DCCReference Include="Domain\PADomainTypes.pas"/>
         <DCCReference Include="Infrastructure\PALogger.pas"/>
         <DCCReference Include="PowerPoint\PAPowerPointMonitor.pas"/>
+        <DCCReference Include="tools\generated\PowerPoint_TLB.pas"/>
+        <DCCReference Include="tools\generated\Office_TLB.pas"/>
+        <DCCReference Include="tools\generated\VBIDE_TLB.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

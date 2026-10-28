@@ -39,7 +39,10 @@
 - PA-007A source implementation: **Complete**
 - PA-007A type-library import: **Completed from installed MSPPT.OLB**
 - PA-007A deterministic state tests: **Completed; exit code 0**
-- PA-007A live event delivery: **Pending developer test**
+- PA-007A live event delivery: **Accepted by developer-reported slideshow log**
+- PA-007B production monitor source/build: **Completed; integrated live test pending**
+- PA-007B deterministic monitor tests: **Completed; exit code 0**
+- PA-007B main VCL build: **Completed; exit code 0**
 
 PA-004A added only RTL-only domain contracts and pure volume helpers plus a
 small console harness. It did not implement system tray behavior, PowerPoint,
@@ -418,6 +421,49 @@ remains a developer runtime check.
 The worker also has a final exception boundary: an unexpected automation or
 RPC exception is converted into a sequenced fault snapshot rather than
 escaping through the VCL application thread.
+
+### PA-007B production integration evidence
+
+The production monitor now uses the generated `PowerPoint_TLB` declarations
+and `TPowerPointApplication` connection-point wrapper on its dedicated STA
+worker. Its event callbacks only record bounded metadata and request later
+reconciliation. The worker pumps Windows messages, disconnects the event sink
+before releasing the application interface, and retries attachment on the
+normal bounded polling cadence after a COM/RPC failure.
+
+The monitor harness was built and run with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UPowerPoint;tools\generated -Itools\generated -EWin64\Debug\monitor-tests -NUWin64\Debug\monitor-tests tests\PAPowerPointMonitorTests.dpr && Win64\Debug\monitor-tests\PAPowerPointMonitorTests.exe'
+```
+
+Result: build succeeded and all 10 checks passed with exit code `0`,
+including zero/negative-position rejection, later valid-position restoration,
+snapshot publication, bounded stop, and repeated stop. The separate PA-007A
+event-state harness covers event ordering and post-callback reconciliation;
+production event delivery remains a live runtime check.
+
+The integrated VCL application was built with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UPowerPoint;tools\generated -Itools\generated -EWin64\Debug\app-build -NUWin64\Debug\app-build PresenterAssistant.dpr'
+```
+
+Result: build succeeded with exit code `0`.
+
+The standalone production-monitor probe was built and smoke-tested with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UPowerPoint;tools\generated -Itools\generated -EWin64\Debug\monitor-probe -NUWin64\Debug\monitor-probe tools\PAPowerPointMonitorProbe.dpr && Win64\Debug\monitor-probe\PAPowerPointMonitorProbe.exe 5'
+```
+
+Result: build and run succeeded with exit code `0`; the no-slideshow smoke
+output reported `connected-no-show`, `eventSequence=0`, and zero diagnostic
+event counters.
+
+The production monitor has not yet been run through the developer's complete
+integrated slideshow, animation, PowerPoint-exit, and reattachment procedure.
+Those are runtime checks and are not claimed by these deterministic results.
 
 ## Collected environment evidence
 

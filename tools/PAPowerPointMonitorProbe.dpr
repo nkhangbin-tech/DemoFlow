@@ -40,7 +40,11 @@ begin
           Writeln(DateToISO8601(Snapshot.ObservedAt, True), ' ',
             PowerPointMonitorStateName(Snapshot.State),
             ' windows=', Snapshot.WindowCount,
-            ' error=', Snapshot.ErrorText);
+            ' error=', Snapshot.ErrorText,
+            ' eventSequence=', Snapshot.EventSequence,
+            ' lastEvent=', Snapshot.LastEventName,
+            ' buildEvents=', Snapshot.BuildEventCount,
+            ' nextClickEvents=', Snapshot.NextClickEventCount);
           for Index := 0 to High(Snapshot.Windows) do
             Writeln('  window=', Snapshot.Windows[Index].CollectionIndex,
               ' slideIndex=', Snapshot.Windows[Index].SlideIndex,

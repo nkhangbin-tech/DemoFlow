@@ -163,14 +163,18 @@ Implementation record:
   events in bounded memory, pumps an STA message queue, and reconciles with
   later read-only polling.
 - No main application source or production monitor behavior is changed.
-- Live event delivery, event timing, PowerPoint disconnect, and slideshow
-  termination remain developer verification items.
+- Developer-reported live evidence accepted PA-007A: all five events,
+  reconciliation, zero-position unavailability, and a transient RPC failure
+  were observed. Successful post-disconnect recovery remains unverified.
 
 ### PA-007B — Integrate verified PowerPoint events
 
-- Depends on PA-007A source review and live runtime verification. Not
-  implemented.
-- Polling remains the production authoritative fallback.
+- Depends on PA-007A. Implemented in the production monitor pending developer
+  runtime verification.
+- The monitor owns the generated event sink on its STA, pumps messages, records
+  bounded event metadata, reconciles after callbacks, treats zero positions as
+  unavailable, and reconnects after COM disconnection. Polling remains the
+  production authoritative fallback.
 
 ### PA-005 — Tray shell and lifecycle
 

@@ -2,9 +2,9 @@
 
 ## Current baseline
 
-- **Task:** PA-007A
-- **Task type:** Standalone PowerPoint COM event diagnostic probe
-- **Status:** Source implementation and command-line build/test evidence complete; live event delivery verification is pending.
+- **Task:** PA-007B
+- **Task type:** Production PowerPoint COM event integration
+- **Status:** Source implementation, Win64 builds, and deterministic harnesses complete; integrated live runtime verification is pending.
 - **Workspace state:** Git repository on branch `main`; minimal application project now exists.
 - **Historical baseline:** PA-001 recorded the workspace as not yet initialized as Git. That historical observation is preserved in the audit.
 - **Primary target:** Win64.
@@ -13,9 +13,9 @@
 - **Command-line domain harness:** Built and executed successfully.
 - **Delphi IDE build for PA-004A:** Pending developer verification.
 - **Application run/manual runtime verification for PA-004A:** Pending developer verification.
-- **PA automation features implemented:** Read-only PowerPoint polling is
-  integrated; the standalone PA-007A diagnostic event sink is implemented.
-  Production event integration and automation actions remain unimplemented.
+- **PA automation features implemented:** Read-only PowerPoint polling and the
+  verified production event sink are integrated. Automation actions remain
+  unimplemented.
 - **PA-004B configuration implementation:** Complete pending developer verification.
 - **PA-004B command-line application build:** Completed successfully.
 - **PA-004B configuration harness:** Built and executed successfully.
@@ -65,7 +65,7 @@ application test results.
 | PA-006A | Diagnostic tool | Complete pending developer verification | Standalone read-only PowerPoint COM attachment and slideshow polling probe |
 | PA-006B1 | Implementation | Complete pending developer verification | Reusable PowerPoint STA polling monitor |
 | PA-006B2 | Implementation | Complete pending developer verification | Integrate the polling monitor into the VCL application, timer polling, tray status, and bounded shutdown |
-| PA-007A | Diagnostic tool | Complete pending developer verification | Verify PowerPoint event interface, STA message pump, event timing, and polling reconciliation |
-| PA-007B | Implementation | Not started | Integrate verified events into the production monitor; polling remains authoritative |
+| PA-007A | Diagnostic tool | Accepted by developer report | Verify PowerPoint event interface, STA message pump, event timing, and polling reconciliation |
+| PA-007B | Implementation | Complete pending developer verification | Integrate verified events into the production monitor; polling remains authoritative |
 
 PA-001 does not mark any application feature as implemented or tested.
