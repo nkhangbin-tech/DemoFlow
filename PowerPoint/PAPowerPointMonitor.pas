@@ -57,6 +57,7 @@ type
     FLatest: TPowerPointMonitorSnapshot;
     FHasLatest: Boolean;
     procedure Publish(const Snapshot: TPowerPointMonitorSnapshot);
+    procedure PublishFault(const ErrorText: string);
     procedure WorkerLoop;
     procedure SetStoppedSnapshot;
   public
@@ -103,8 +104,17 @@ end;
 
 procedure ClearVariant(var Value: OleVariant);
 begin
-  if not VarIsEmpty(Value) then
+  if VarIsEmpty(Value) then
+    Exit;
+  try
     VarClear(Value);
+  except
+    on E: Exception do
+    begin
+      TVarData(Value).VType := varEmpty;
+      TVarData(Value).VPointer := nil;
+    end;
+  end;
 end;
 
 constructor TPowerPointMonitor.TWorker.Create(AOwner: TPowerPointMonitor);
@@ -116,7 +126,12 @@ end;
 
 procedure TPowerPointMonitor.TWorker.Execute;
 begin
-  FOwner.WorkerLoop;
+  try
+    FOwner.WorkerLoop;
+  except
+    on E: Exception do
+      FOwner.PublishFault(E.ClassName + ': ' + E.Message);
+  end;
 end;
 
 constructor TPowerPointMonitor.Create(IntervalMs: Cardinal);
@@ -213,6 +228,24 @@ begin
   end;
 end;
 
+procedure TPowerPointMonitor.PublishFault(const ErrorText: string);
+var
+  Snapshot: TPowerPointMonitorSnapshot;
+begin
+  Snapshot := Default(TPowerPointMonitorSnapshot);
+  Snapshot.State := pmsFaulted;
+  Snapshot.ObservedAt := Now;
+  Snapshot.ErrorText := ErrorText;
+  TMonitor.Enter(FLock);
+  try
+    Snapshot.Sequence := FLatest.Sequence + 1;
+    FLatest := Snapshot;
+    FHasLatest := True;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+end;
+
 procedure TPowerPointMonitor.SetStoppedSnapshot;
 var
   Snapshot: TPowerPointMonitorSnapshot;
@@ -234,12 +267,13 @@ var
   Snapshot, LastPublished: TPowerPointMonitorSnapshot;
   Windows, Window, View, Slide: OleVariant;
   Count, Index: Integer;
-  Changed, Attached: Boolean;
+  Changed, Attached, HasPublished: Boolean;
   WaitResult: TWaitResult;
 begin
   ComInitialized := False;
   PowerPoint := Unassigned;
   Attached := False;
+  HasPublished := False;
   LastPublished := Default(TPowerPointMonitorSnapshot);
   try
     ComResult := CoInitialize(nil);
@@ -350,7 +384,8 @@ begin
         end;
       end;
 
-      Changed := Snapshot.State <> LastPublished.State;
+      Changed := not HasPublished or
+        (Snapshot.State <> LastPublished.State);
       if not Changed then
         Changed := Snapshot.WindowCount <> LastPublished.WindowCount;
       if not Changed then
@@ -367,6 +402,7 @@ begin
         Snapshot.Sequence := LastPublished.Sequence + 1;
         Publish(Snapshot);
         LastPublished := Snapshot;
+        HasPublished := True;
       end;
       WaitResult := FWakeEvent.WaitFor(FIntervalMs);
       if WaitResult = wrSignaled then

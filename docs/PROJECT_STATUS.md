@@ -2,9 +2,9 @@
 
 ## Current baseline
 
-- **Task:** PA-005A
-- **Task type:** Application bootstrap and safe mode
-- **Status:** Source implementation and command-line build/test evidence complete; new IDE/runtime verification is pending.
+- **Task:** PA-006B2
+- **Task type:** VCL PowerPoint monitor integration
+- **Status:** Source implementation and command-line build/test evidence complete; developer IDE/runtime verification is pending.
 - **Workspace state:** Git repository on branch `main`; minimal application project now exists.
 - **Historical baseline:** PA-001 recorded the workspace as not yet initialized as Git. That historical observation is preserved in the audit.
 - **Primary target:** Win64.
@@ -13,7 +13,8 @@
 - **Command-line domain harness:** Built and executed successfully.
 - **Delphi IDE build for PA-004A:** Pending developer verification.
 - **Application run/manual runtime verification for PA-004A:** Pending developer verification.
-- **PA automation features implemented:** None.
+- **PA automation features implemented:** Read-only PowerPoint monitoring is
+  integrated; automation actions and event sinks remain unimplemented.
 - **PA-004B configuration implementation:** Complete pending developer verification.
 - **PA-004B command-line application build:** Completed successfully.
 - **PA-004B configuration harness:** Built and executed successfully.
@@ -28,6 +29,8 @@
   diagnostic complete; PowerPoint slideshow runtime verification is pending.
 - **PA-006B1 monitor:** Source implementation, monitor harness, and focused
   tests complete; live monitor runtime verification is pending.
+- **PA-006B2 monitor integration:** Source implementation and Win64 build
+  complete; VCL/runtime verification is pending.
 - **Known PA-004B limitation:** Browser `titlePattern` is validated as a
   non-empty opaque pattern; regex syntax is intentionally not interpreted.
 
@@ -59,7 +62,7 @@ application test results.
 | PA-005B | Implementation | Complete pending developer verification | System tray, hide/restore, reload, explicit exit, and session-end shutdown |
 | PA-006A | Diagnostic tool | Complete pending developer verification | Standalone read-only PowerPoint COM attachment and slideshow polling probe |
 | PA-006B1 | Implementation | Complete pending developer verification | Reusable PowerPoint STA polling monitor |
-| PA-006B2 | Implementation | Not started | Integrate the polling monitor into the VCL application; depends on PA-006B1 |
+| PA-006B2 | Implementation | Complete pending developer verification | Integrate the polling monitor into the VCL application, timer polling, tray status, and bounded shutdown |
 | PA-007 | Implementation | Not started | PowerPoint event monitoring and reconciliation; depends on PA-006B |
 
 PA-001 does not mark any application feature as implemented or tested.

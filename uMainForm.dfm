@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   Caption = 'Presenter Assistant'
-  ClientHeight = 270
+  ClientHeight = 350
   ClientWidth = 620
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -65,14 +65,37 @@ object MainForm: TMainForm
     Caption = 'Startup diagnostic: pending'
     WordWrap = True
   end
+  object PowerPointStatusLabel: TLabel
+    Left = 24
+    Top = 220
+    Width = 560
+    Height = 17
+    Caption = 'PowerPoint monitor: not started'
+  end
+  object PowerPointDetailsLabel: TLabel
+    Left = 24
+    Top = 244
+    Width = 560
+    Height = 32
+    AutoSize = False
+    Caption = 'PowerPoint: state unavailable'
+    WordWrap = True
+  end
   object CloseButton: TButton
     Left = 264
-    Top = 226
+    Top = 300
     Width = 92
     Height = 29
     Caption = 'Hide to tray'
     TabOrder = 0
     OnClick = CloseButtonClick
+  end
+  object MonitorTimer: TTimer
+    Enabled = False
+    Interval = 250
+    OnTimer = MonitorTimerTimer
+    Left = 120
+    Top = 224
   end
   object TrayPopupMenu: TPopupMenu
     Left = 24

@@ -5,7 +5,8 @@ uses
   uMainForm in 'uMainForm.pas' {MainForm},
   PAConfiguration in 'Config\PAConfiguration.pas',
   PADomainTypes in 'Domain\PADomainTypes.pas',
-  PALogger in 'Infrastructure\PALogger.pas';
+  PALogger in 'Infrastructure\PALogger.pas',
+  PAPowerPointMonitor in 'PowerPoint\PAPowerPointMonitor.pas';
 
 {$R *.res}
 

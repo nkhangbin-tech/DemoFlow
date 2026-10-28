@@ -135,12 +135,19 @@ Implementation record:
   latest snapshots, distinguishes disconnected/no-show/known/unknown/
   ambiguous/faulted states, enumerates every slideshow window, and stops
   idempotently without callbacks into destroyed consumers.
-- The monitor remains read-only and is not integrated into the VCL
-  application in this task.
+- The monitor remains read-only; VCL integration is handled separately by
+  PA-006B2.
 
 ### PA-006B2 — Integrate PowerPoint monitor into the VCL application
 
-- Depends on PA-006B1 and its runtime review. Not implemented.
+- Depends on PA-006B1 and its runtime review. Implemented in the VCL form.
+- The form starts the existing STA monitor after startup initialization, polls
+  `TryGetLatest` from a 250 ms VCL timer, updates truthful PowerPoint and tray
+  status, and continues monitoring while hidden.
+- The timer is disabled before bounded monitor shutdown; a stop timeout is
+  surfaced and the monitor is not freed while its worker may still own COM.
+- No COM calls, PowerPoint actions, event sinks, or sequence routing were
+  added. PA-007 remains separate.
 
 ### PA-006B — Production PowerPoint Attachment and Polling Monitor
 

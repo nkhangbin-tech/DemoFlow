@@ -78,6 +78,12 @@ developer with PowerPoint.
 - Disconnected, no slideshow, known slide, stale snapshot, modal failure,
   external slide change, and slideshow termination.
 - Confirm `SlideIndex` and `CurrentShowPosition` remain separate.
+- PA-006B2 deterministic coverage includes monitor lifecycle regression tests
+  and a successful main Win64 compile with the VCL timer/form integration.
+- Manual PA-006B2 coverage must verify startup with and without PowerPoint,
+  connected/no-show, known slideshow values, ambiguous multiple windows,
+  disconnect/reconnect, tray tooltip/status updates while hidden, and bounded
+  shutdown. These require the developer's Delphi IDE and live PowerPoint.
 - Simulate `SlideShowNextSlide` before-transition notification and verify that
   the callback invalidates state and a later poll confirms the new slide.
 - Verify event loss and out-of-order polling do not advance the cursor wrongly.

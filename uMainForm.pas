@@ -4,6 +4,7 @@ interface
 
 uses
   PAConfiguration,
+  PAPowerPointMonitor,
   PALogger,
   Vcl.Controls,
   Vcl.ExtCtrls,
@@ -31,6 +32,9 @@ type
     ServicesMenuItem: TMenuItem;
     TraySeparator: TMenuItem;
     ExitMenuItem: TMenuItem;
+    PowerPointStatusLabel: TLabel;
+    PowerPointDetailsLabel: TLabel;
+    MonitorTimer: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormResize(Sender: TObject);
@@ -39,12 +43,15 @@ type
     procedure ShowMenuItemClick(Sender: TObject);
     procedure ReloadMenuItemClick(Sender: TObject);
     procedure ExitMenuItemClick(Sender: TObject);
+    procedure MonitorTimerTimer(Sender: TObject);
   private
     FLogger: TLogger;
     FConfigurationStore: TConfigurationStore;
     FConfigurationPath: string;
     FStopping: Boolean;
     FFinalExitRequested: Boolean;
+    FPowerPointMonitor: TPowerPointMonitor;
+    FLastMonitorSequence: UInt64;
     procedure StartApplication;
     procedure StopApplication;
     procedure InitializeTray;
@@ -53,6 +60,8 @@ type
     procedure RequestApplicationExit;
     procedure ReloadConfiguration;
     procedure UpdateTrayStatus;
+    procedure UpdatePowerPointStatus;
+    procedure StartPowerPointMonitor;
     procedure WMQueryEndSession(var Message: TWMQueryEndSession);
       message WM_QUERYENDSESSION;
     procedure SetDiagnostic(const Value: string);
@@ -148,23 +157,129 @@ begin
       FLogger.Log(lsWarning, 'Configuration was not activated; safe mode is active',
         'startup');
   end;
+  StartPowerPointMonitor;
   UpdateTrayStatus;
 end;
 
 procedure TMainForm.StopApplication;
+var
+  MonitorStopped: Boolean;
 begin
   if FStopping then
     Exit;
   FStopping := True;
+  MonitorTimer.Enabled := False;
   StatusLabel.Caption := 'Application status: stopping';
+  MonitorStopped := True;
+  if FPowerPointMonitor <> nil then
+  begin
+    MonitorStopped := FPowerPointMonitor.Stop(2000);
+    if MonitorStopped then
+      FreeAndNil(FPowerPointMonitor)
+    else
+      SetDiagnostic('PowerPoint monitor did not stop within the bounded timeout.');
+  end;
   if FLogger <> nil then
   begin
+    if MonitorStopped then
+      FLogger.Log(lsInfo, 'PowerPoint monitor stopped', 'powerpoint')
+    else
+      FLogger.Log(lsError, 'PowerPoint monitor stop timed out', 'powerpoint');
     FLogger.Log(lsInfo, 'Application shutdown', 'shutdown');
     FLogger.Flush(2000);
     FLogger.Shutdown(2000);
     FreeAndNil(FLogger);
   end;
+
   FreeAndNil(FConfigurationStore);
+end;
+
+procedure TMainForm.StartPowerPointMonitor;
+begin
+  PowerPointStatusLabel.Caption := 'PowerPoint monitor: starting';
+  PowerPointDetailsLabel.Caption := 'PowerPoint: state unavailable';
+  try
+    FPowerPointMonitor := TPowerPointMonitor.Create(500);
+    FPowerPointMonitor.Start;
+    FLastMonitorSequence := 0;
+    MonitorTimer.Enabled := True;
+    PowerPointStatusLabel.Caption := 'PowerPoint monitor: running';
+    if FLogger <> nil then
+      FLogger.Log(lsInfo, 'PowerPoint monitor started', 'powerpoint');
+  except
+    on E: Exception do
+    begin
+      FreeAndNil(FPowerPointMonitor);
+      MonitorTimer.Enabled := False;
+      PowerPointStatusLabel.Caption := 'PowerPoint monitor: faulted';
+      PowerPointDetailsLabel.Caption := 'PowerPoint: monitor unavailable';
+      SetDiagnostic('PowerPoint monitor initialization failed: ' + E.Message);
+      if FLogger <> nil then
+        FLogger.Log(lsError, 'PowerPoint monitor initialization failed',
+          'powerpoint', 0, E.ClassName, E.Message);
+    end;
+  end;
+end;
+
+procedure TMainForm.UpdatePowerPointStatus;
+var
+  Snapshot: TPowerPointMonitorSnapshot;
+  WindowSnapshot: TPowerPointWindowSnapshot;
+  DetailText: string;
+begin
+  if FPowerPointMonitor = nil then
+    Exit;
+  if not FPowerPointMonitor.TryGetLatest(Snapshot) then
+    Exit;
+  if Snapshot.Sequence = FLastMonitorSequence then
+    Exit;
+  FLastMonitorSequence := Snapshot.Sequence;
+  case Snapshot.State of
+    pmsDisconnected:
+      PowerPointDetailsLabel.Caption := 'PowerPoint: Disconnected';
+    pmsConnectedNoShow:
+      PowerPointDetailsLabel.Caption := 'PowerPoint: Connected - No Slideshow';
+    pmsShowKnown:
+      begin
+        if Length(Snapshot.Windows) = 0 then
+        begin
+          PowerPointDetailsLabel.Caption :=
+            'PowerPoint: State Unknown - no window details';
+          Exit;
+        end;
+        WindowSnapshot := Snapshot.Windows[0];
+        DetailText := 'PowerPoint: Slideshow Active, windows=' +
+          IntToStr(Snapshot.WindowCount);
+        if WindowSnapshot.HasSlideIndex then
+          DetailText := DetailText + ', slide index=' +
+            IntToStr(WindowSnapshot.SlideIndex)
+        else
+          DetailText := DetailText + ', slide index=unavailable';
+        if WindowSnapshot.HasShowPosition then
+          DetailText := DetailText + ', show position=' +
+            IntToStr(WindowSnapshot.ShowPosition)
+        else
+          DetailText := DetailText + ', show position=unavailable';
+        PowerPointDetailsLabel.Caption := DetailText;
+      end;
+    pmsShowUnknown:
+      PowerPointDetailsLabel.Caption := 'PowerPoint: State Unknown, windows=' +
+        IntToStr(Snapshot.WindowCount);
+    pmsAmbiguous:
+      PowerPointDetailsLabel.Caption :=
+        'PowerPoint: Multiple Slideshow Windows - Ambiguous';
+    pmsFaulted:
+      PowerPointDetailsLabel.Caption := 'PowerPoint: Monitor Faulted - ' +
+        Snapshot.ErrorText;
+  else
+    PowerPointDetailsLabel.Caption := 'PowerPoint: Monitor stopped';
+  end;
+  if Snapshot.ErrorText <> '' then
+    PowerPointStatusLabel.Caption :=
+      'PowerPoint monitor: running (diagnostic available)'
+  else
+    PowerPointStatusLabel.Caption := 'PowerPoint monitor: running';
+  UpdateTrayStatus;
 end;
 
 procedure TMainForm.InitializeTray;
@@ -191,6 +306,9 @@ begin
     StatusMenuItem.Caption := 'Status: configuration loaded'
   else
     StatusMenuItem.Caption := 'Status: configuration not loaded';
+  if PowerPointDetailsLabel.Caption <> '' then
+    StatusMenuItem.Caption := StatusMenuItem.Caption + ' | ' +
+      PowerPointDetailsLabel.Caption;
   ServicesMenuItem.Caption := 'Automation services are not implemented';
   ReloadMenuItem.Enabled := not FStopping;
   ShowMenuItem.Enabled := not FStopping;
@@ -316,6 +434,12 @@ end;
 procedure TMainForm.ExitMenuItemClick(Sender: TObject);
 begin
   RequestApplicationExit;
+end;
+
+procedure TMainForm.MonitorTimerTimer(Sender: TObject);
+begin
+  if not FStopping then
+    UpdatePowerPointStatus;
 end;
 
 procedure TMainForm.WMQueryEndSession(var Message: TWMQueryEndSession);

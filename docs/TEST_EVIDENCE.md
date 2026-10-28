@@ -272,6 +272,41 @@ directory. It verified interval clamping, explicit state names, snapshot
 publication, bounded stop, and repeated stop; all tests passed with exit code
 `0`.
 
+## PA-006B2 VCL integration evidence
+
+The main VCL application was rebuilt after integrating the reusable monitor
+with a 250 ms VCL timer, truthful PowerPoint status labels, tray status
+updates, and bounded monitor shutdown:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -NSSystem;Vcl;Winapi -UConfig;Domain;Infrastructure;PowerPoint -IConfig;Domain;Infrastructure;PowerPoint -EWin64\Debug2\ PresenterAssistant.dpr'
+```
+
+Result: **success**, Delphi Win64 compiler version `36.0`, exit code `0`.
+The focused PA-006B1 monitor regression harness was rebuilt and executed after
+the integration changes. All seven tests passed with exit code `0`.
+
+The following remain developer verification items: Delphi IDE build and
+runtime startup, live PowerPoint no-show/show/disconnect transitions, multiple
+slideshow-window ambiguity, tray tooltip/status updates while the form is
+hidden, and shutdown/session-end behavior. No runtime claim is made for those
+cases here.
+
+### PowerPoint disconnect cleanup fix
+
+After developer-reported `EOleSysError: The object invoked has disconnected
+from its clients` when PowerPoint exited, COM variant cleanup in the monitor
+was hardened. Expected `EOleSysError` and `EVariantError` exceptions during
+variant teardown are contained in the worker, and the monitor continues with
+its normal fault/disconnected and reattachment state flow. The main Win64
+application rebuilt successfully and all seven focused monitor tests passed
+with exit code `0` after this fix. Live PowerPoint exit/reconnect verification
+remains a developer runtime check.
+
+The worker also has a final exception boundary: an unexpected automation or
+RPC exception is converted into a sequenced fault snapshot rather than
+escaping through the VCL application thread.
+
 ## Collected environment evidence
 
 | Check | Result | Interpretation |
