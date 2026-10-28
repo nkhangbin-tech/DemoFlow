@@ -220,8 +220,15 @@ Implementation record:
 ### PA-008B — Production Core Audio endpoint service
 
 - Depends on successful PA-008A runtime review.
-- Will own Core Audio COM interfaces and endpoint notifications on the
-  dedicated STA worker. Not started.
+- Implements `Audio\PACoreAudioService.pas` with a dedicated STA worker,
+  endpoint/default-device notifications, endpoint-volume notifications,
+  periodic reconciliation, immutable snapshots, and an asynchronous
+  master-volume request API.
+- `tools\PAAudioServiceProbe.dpr` exercises the service without reimplementing
+  Core Audio operations. `tests\PAAudioServiceTests.dpr` covers deterministic
+  request, conversion, context, snapshot, and lifecycle logic.
+- Source and Win64 build evidence are complete. Live device-change and
+  opt-in volume-setting verification remain developer-owned.
 
 ### PA-009 — Volume rules and delta mode
 

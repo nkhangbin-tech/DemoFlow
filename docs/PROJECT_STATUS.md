@@ -2,9 +2,17 @@
 
 ## Current baseline
 
-- **Task:** PA-008A
-- **Task type:** Read-only Windows Core Audio diagnostic probe
-- **Status:** Probe source, verified declarations, Win64 build, pure tests, and local endpoint smoke test complete; developer review remains required.
+- **Task:** PA-008B
+- **Task type:** Production Windows Core Audio service
+- **Status:** Service source, callback-driven volume updates, event-triggered
+  endpoint rebinds, Win64 builds, deterministic tests, and explicit one-shot
+  plus interactive continuous read-only service probes complete. FIX8 live
+  evidence verified callback delivery and FIX9 removes periodic volume polling.
+  Final user-performed live verification covered volume callbacks, endpoint
+  replacement/rebind across Speakers, LG ULTRAFINE, and Headset, cached-only
+  diagnostic heartbeats, and clean Enter-driven shutdown. PA-008B's
+  read-only monitoring scope is verified; the asynchronous volume-setting
+  request API remains unverified by live evidence.
 - **Workspace state:** Git repository on branch `main`; minimal application project now exists.
 - **Historical baseline:** PA-001 recorded the workspace as not yet initialized as Git. That historical observation is preserved in the audit.
 - **Primary target:** Win64.
@@ -38,6 +46,14 @@
   enumeration smoke test complete. The diagnostic and test executables have
   distinct entry points and output paths; developer confirmation of identity
   and non-mutation is pending.
+- **PA-008B Core Audio service:** Dedicated STA worker, endpoint/default-device
+  and endpoint-volume callback registration, callback-driven volume state,
+  event-triggered endpoint rebind,
+  immutable snapshots, scalar-aware filtering, cached callback diagnostics,
+  asynchronous validated volume requests, and idempotent teardown implemented.
+  Live volume notification delivery and default-device replacement/rebind are
+  verified. The asynchronous validated volume request API is implemented but
+  remains outside the completed live verification scope.
 - **Known PA-004B limitation:** Browser `titlePattern` is validated as a
   non-empty opaque pattern; regex syntax is intentionally not interpreted.
 
@@ -72,7 +88,7 @@ and volume rules remain unimplemented.
 | PA-007A | Diagnostic tool | Accepted by developer report | Verify PowerPoint event interface, STA message pump, event timing, and polling reconciliation |
 | PA-007B | Implementation | Complete pending developer verification | Integrate verified events into the production monitor; polling remains authoritative |
 | PA-008A | Diagnostic tool | Complete pending developer verification | Enumerate active render endpoints and read default-console endpoint volume/mute without mutation |
-| PA-008B | Implementation | Not started | Production Core Audio endpoint service; depends on PA-008A runtime review |
+| PA-008B | Implementation | Complete pending developer verification | Production Core Audio endpoint service, notifications, snapshots, requests, and safe teardown |
 | PA-009 | Implementation | Not started | Volume rules and delta mode; depends on PA-008B |
 
 PA-001 does not mark any application feature as implemented or tested.

@@ -153,11 +153,48 @@ live endpoint evidence.
   operation occurs.
 
 - PA-008B will enumerate actual default render endpoints, read/write master
-  volume, and receive endpoint replacement/loss notifications.
+  volume, and receive endpoint replacement/loss notifications. The production
+  implementation is covered by `tests\PAAudioServiceTests.dpr` for
+  non-hardware logic and `tools\PAAudioServiceProbe.dpr` for live service
+  observations.
 - Verify callback unregister occurs before COM release and no callback reaches
-  freed state.
-- Verify callbacks never block, re-enter endpoint operations, or evaluate rules.
-- Use a fake endpoint to verify command context and notification idempotency.
+  freed state through worker teardown review and a live shutdown run.
+- Verify callbacks never block, re-enter endpoint operations, or evaluate rules;
+  deterministic tests do not claim to prove this external callback behavior.
+- Verify valid/invalid request acceptance, request IDs and completion states,
+  immutable snapshot reads, own/external event-context classification, repeated
+  start/stop, and explicit unavailable/no-default states.
+- The service probe is read-only by default. Endpoint replacement, Windows
+  volume UI notification, and device-loss recovery are manual tests and are
+  not claimed by compilation or pure tests. The final live run completed the
+  volume notification and endpoint replacement checks. Volume-setting through
+  the asynchronous request API remains unverified live.
+- Deterministic service tests cover raw scalar changes within one rounded
+  display percentage, significant scalar/display changes, mute-only changes,
+  unchanged suppression, and the reconciliation comparison seam independently
+  of callback delivery.
+- Continuous manual probe mode is:
+  `Win64\Debug\audio-service-probe\PAAudioServiceProbe.exe --continuous`.
+  It exits on Enter, suppresses unchanged reconciliation snapshots, and must
+  be used to observe volume UI changes, default-device replacement, recovery,
+  and clean shutdown without restarting the process. The final user-performed
+  run completed these monitoring checks. It requires an
+  interactive console; redirected standard input is not equivalent.
+- For callback-path diagnosis, add `--diagnostics`. The five-second heartbeat
+  reports cached scalar/mute values, callback payloads, and snapshot
+  correlation only; it does not poll Core Audio or enumerate endpoints.
+  Initial reads and endpoint-rebind reads are event-triggered service work.
+- Continuous mode must remain alive without a verified interactive console
+  Enter; duration limits apply only to one-shot mode.
+- Callback registration uses the typed `IAudioEndpointVolumeCallback`
+  interface pointer, and the notification payload layout must match the
+  Windows SDK order. Automated tests cannot prove OS callback delivery.
+- The completed final live run changed the default output device and verified
+  endpoint rebind, callback registration, one initial read for each newly
+  bound endpoint, and clean shutdown.
+- The final live evidence also confirmed that callback counters are scoped
+  differently: `callbackProcessed` restarts for the newly bound endpoint
+  callback, while `externalCount` remains cumulative across rebinding.
 
 ## Runtime evidence gates
 
@@ -173,5 +210,6 @@ IDs. Do not record URL query strings or unnecessary personal information.
 ## Environment blockers
 
 The PA-001 WMI sound-device query returned no rows. This is inconclusive;
-PA-008A enumerates Core Audio render endpoints directly. PA-008B and runtime
-write/notification behavior remain pending.
+PA-008A enumerates Core Audio render endpoints directly. PA-008B source,
+build, deterministic harness, and a read-only local service probe are complete;
+runtime write/notification and endpoint-replacement behavior remain pending.

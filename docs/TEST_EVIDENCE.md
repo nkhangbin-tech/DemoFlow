@@ -540,6 +540,183 @@ is `tools\PACoreAudioProbe.dpr`, built as
 The separate test executable was also rebuilt and exited with code `0`; its
 `PASS:` output is not live endpoint evidence.
 
+### PA-008B Production Core Audio service evidence
+
+Source implementation:
+
+- `Audio\PACoreAudioService.pas` owns Core Audio COM interfaces on a dedicated
+  STA worker.
+- `CoreAudio\PACoreAudioApi.pas` contains the shared MMDevice, endpoint-volume,
+  endpoint-volume callback, and notification-client declarations.
+- `tools\PAAudioServiceProbe.dpr` uses the public service API and is read-only
+  by default. It supports explicit one-shot and `--continuous` modes.
+- `tests\PAAudioServiceTests.dpr` covers deterministic service logic and
+  lifecycle behavior without changing volume.
+
+The service probe was built with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UCoreAudio;Audio -EWin64\Debug\audio-service-probe -NUWin64\Debug\audio-service-probe tools\PAAudioServiceProbe.dpr'
+```
+
+The deterministic service harness was built and run with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -UCoreAudio;Audio -EWin64\Debug\audio-service-tests -NUWin64\Debug\audio-service-tests tests\PAAudioServiceTests.dpr && Win64\Debug\audio-service-tests\PAAudioServiceTests.exe'
+```
+
+Result: 17 checks passed, exit code `0`. The checks covered percentage
+validation/conversion, explicit unavailable state names, request status names,
+own/external event-context classification, initial snapshot absence, invalid
+request rejection, repeated start/stop, and restart.
+The final harness also covers unchanged-snapshot suppression semantics and
+endpoint/volume change detection.
+
+The main Win64 VCL application was rebuilt with:
+
+```powershell
+& $env:ComSpec /c 'call "D:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat" >nul && cd /d E:\Programming\Tool\DemoFlow && dcc64.exe -B -Q -CC -Utools\generated;Config;Domain;Infrastructure;PowerPoint;CoreAudio;Audio -EWin64\Debug\app -NUWin64\Debug\app PresenterAssistant.dpr'
+```
+
+Result: Delphi Win64 compiler version `36.0`, build succeeded, exit code `0`.
+
+The read-only service probe was run for five seconds:
+
+```text
+PROBE_START name=PAAudioServiceProbe
+Presenter Assistant production Core Audio service probe
+Default mode is read-only; no volume or mute change is requested.
+SERVICE_STARTED volumeMode=callback-driven initialRead=once
+SNAPSHOT sequence=3 state=available endpoints=3 endpointId={0.0.0.00000000}.{f90bae51-14d4-48fe-8115-a8d41277e786} friendlyName=Speakers (SRS-XB32 Stereo) hasVolume=TRUE displayPercent=23 muted=FALSE ownChange=FALSE ownCount=0 externalCount=0 event= error=
+SNAPSHOT sequence=5 state=available endpoints=3 endpointId={0.0.0.00000000}.{f90bae51-14d4-48fe-8115-a8d41277e786} friendlyName=Speakers (SRS-XB32 Stereo) hasVolume=TRUE displayPercent=23 muted=FALSE ownChange=FALSE ownCount=0 externalCount=0 event= error=
+SNAPSHOT sequence=7 state=available endpoints=3 endpointId={0.0.0.00000000}.{f90bae51-14d4-48fe-8115-a8d41277e786} friendlyName=Speakers (SRS-XB32 Stereo) hasVolume=TRUE displayPercent=23 muted=FALSE ownChange=FALSE ownCount=0 externalCount=0 event= error=
+SNAPSHOT sequence=9 state=available endpoints=3 endpointId={0.0.0.00000000}.{f90bae51-14d4-48fe-8115-a8d41277e786} friendlyName=Speakers (SRS-XB32 Stereo) hasVolume=TRUE displayPercent=23 muted=FALSE ownChange=FALSE ownCount=0 externalCount=0 event= error=
+SNAPSHOT sequence=11 state=available endpoints=3 endpointId={0.0.0.00000000}.{f90bae51-14d4-48fe-8115-a8d41277e786} friendlyName=Speakers (SRS-XB32 Stereo) hasVolume=TRUE displayPercent=23 muted=FALSE ownChange=FALSE ownCount=0 externalCount=0 event= error=
+SHUTDOWN_COMPLETE status=success
+PROBE_COMPLETE status=success
+```
+
+This is live read-only service evidence on the current machine. It does not
+prove endpoint replacement recovery, external Windows volume-UI callbacks, or
+successful volume setting. The `--set` probe option was not used.
+
+The continuous manual command is:
+
+```powershell
+& 'E:\Programming\Tool\DemoFlow\Win64\Debug\audio-service-probe\PAAudioServiceProbe.exe' --continuous
+```
+
+No continuous interactive session was claimed as automated evidence in this
+run. A redirected `echo.|` attempt was intentionally stopped because it does
+not provide an interactive console Enter event. The user must run the command
+from an interactive console and press Enter to stop it after observing volume
+and default endpoint changes.
+
+Existing regression results after PA-008B changes:
+
+- Domain harness: passed, exit code `0`.
+- Configuration harness: passed, exit code `0`.
+- Logger harness: passed, exit code `0`.
+- PowerPoint monitor harness: passed, exit code `0`.
+- PowerPoint event-state harness: passed, exit code `0`.
+- Continuous probe build: passed, exit code `0`; explicit one-shot probe run:
+  passed, exit code `0`.
+
+PA-008B-FIX3 verification:
+
+- Focused audio service build: passed with `dcc64.exe`, exit code `0`.
+- Focused audio service tests: passed, exit code `0`, including scalar-aware
+  filtering, mute-only changes, unchanged suppression, and the reconciliation
+  comparison seam.
+- Main Win64 application build: passed with `dcc64.exe`, exit code `0`.
+- Read-only one-shot probe: passed, exit code `0`; output reported
+  `callbackRegistrationHr=00000000`, `source=reconciliation`, scalar, and
+  reconciliation diagnostics. No `--set` mode was used.
+- PowerPoint monitor regression build was not completed in this invocation
+  because the generated `PowerPoint_TLB` unit path was not supplied; no source
+  change was made to that subsystem.
+
+The historical FIX3 diagnostics distinguished callback delivery from periodic
+reconciliation. That polling path was removed by FIX9; the historical output
+is retained as evidence of the earlier implementation only.
+
+PA-008B-FIX4 diagnostic build:
+
+- The prior probe executable at
+  `Win64\Debug\audio-service-probe\PAAudioServiceProbe.exe` was timestamped
+  11:23:15, after the prior FIX3 source timestamp, and contained the FIX3
+  fields. It did not contain the FIX4 heartbeat.
+- FIX4 adds the opt-in `DIAGNOSTIC_HEARTBEAT` mode. The read-only diagnostic
+  run built from the current source reported successful scalar and mute reads
+  (`00000000`) and callback registration (`00000000`). No live volume-change
+  result has been claimed.
+
+PA-008B-FIX5 diagnostic comparison:
+
+- The heartbeat's original `getScalarHr` and `scalar` fields were confirmed
+  to come from the snapshot populated by the worker's bound
+  `GetMasterVolumeLevelScalar` call; they were not fresh calls made by the
+  probe.
+- Diagnostic mode now performs a separate activation of
+  `IAudioEndpointVolume` for the current default endpoint on the same STA
+  worker and reports `freshScalarHr`, `freshScalar`, `freshMuteHr`,
+  `freshMuted`, and `freshEndpointId`.
+- A read-only local run showed the bound and fresh paths agreeing at
+  `0.93000001`, both scalar and mute HRESULTs `00000000`, and the same
+  endpoint ID. This is an idle comparison only; no manual volume change was
+  made during the run, so the runtime defect is not yet identified or claimed
+  fixed.
+
+PA-008B-FIX6 diagnostic endpoint coverage:
+
+- The manual declaration matches the Windows SDK method order through
+  `VolumeStepDown`; the SDK continues with `QueryHardwareSupport` and
+  `GetVolumeRange`, which are not used by this service. The IID,
+  `stdcall` convention, `out` scalar/mute parameters, `IMMDevice.Activate`
+  flow, and callback method/registration declarations are consistent with the
+  SDK contract.
+- Diagnostic mode now reports all three default render roles and every active
+  render endpoint, including endpoint ID, friendly name, scalar HRESULT/value,
+  and mute HRESULT/value. These reads remain on the worker STA and are
+  read-only.
+- No live role/endpoint comparison has been performed in this invocation, so
+  no runtime root cause or fix is claimed.
+
+PA-008B-FIX7 verification:
+
+- The previous continuous-mode exit was traced to `EnterWasPressed` treating
+  any signaled standard-input handle as a console event source. FIX7 now
+  requires `GetConsoleMode` to succeed before reading console input. One-shot
+  duration logic remains unchanged, while continuous mode bypasses duration
+  checks.
+- The rebuilt continuous diagnostic probe was started with redirected output,
+  remained alive after three seconds (`alive=True`), printed its startup and
+  heartbeat output, and was then terminated explicitly by the test harness.
+- No Microsoft C++ compiler or Windows SDK include tree was available:
+  `cl`, `clang-cl`, and `msbuild` were not on PATH, and the expected Windows
+  Kits include path was absent. No independent SDK verifier was built or
+  claimed.
+
+PA-008B-FIX8 correction:
+
+- The callback payload declaration was corrected to the Windows SDK order:
+  `GUID`, `BOOL bMuted`, `float fMasterVolume`, `UINT nChannels`, and channel
+  volumes.
+- `IAudioEndpointVolume.RegisterControlChangeNotify` and
+  `UnregisterControlChangeNotify` now accept
+  `IAudioEndpointVolumeCallback`, and the service passes the typed callback
+  interface rather than an `IUnknown` cast. This is the minimal
+  evidence-supported binding correction for callback delivery.
+- Continuous probe termination now prints an explicit reason. The
+  `GetConsoleMode` guard remains in place and duration checks remain limited to
+  one-shot mode.
+- FIX8 automated builds and tests do not prove live callback delivery. A live
+  verification remains required.
+
+The final live verification recorded below supersedes the FIX8-era pending
+callback, volume-UI, endpoint-replacement, and shutdown evidence. The
+asynchronous opt-in setting request remains intentionally untested live.
+
 ## Collected environment evidence
 
 | Check | Result | Interpretation |
@@ -588,3 +765,85 @@ for at least:
 6. Keyboard/mouse hook installation, event routing, and guaranteed cleanup.
 7. Runtime tests with actual PowerPoint, browser windows, audio devices, and
    presenter hardware in the supported environment matrix.
+
+## PA-008B-FIX9 verification
+
+- Removed the timer-driven reconciliation path from the production Core Audio
+  worker. The worker performs one initial endpoint resolution/read, then
+  resolves and rebinds only after a device/default-endpoint notification.
+- Master scalar and mute state after binding are processed from
+  `IAudioEndpointVolumeCallback`; the continuous diagnostic heartbeat reports
+  cached state and does not perform a volume read.
+- Focused audio service tests passed with `dcc64.exe` version 36.0.
+- The read-only probe built successfully and a one-second diagnostic run
+  completed with `source=initial-read`, successful scalar/mute HRESULTs,
+  `callbackRegistrationHr=00000000`, and clean shutdown. No `--set` mode was
+  used.
+- The main Win64 application built successfully to
+  `Win64\Debug\app\PresenterAssistant.exe`.
+- `git diff --check` passed.
+- Automated tests do not prove live callback delivery or default-device
+  rebind. A manual continuous run must still switch the default output device
+  and verify `source=endpoint-rebind`, the new endpoint identity, successful
+  callback registration, and clean Enter-driven shutdown.
+
+## PA-008B-FIX9-B verification
+
+- Removed the diagnostic heartbeat's fresh endpoint activation, scalar/mute
+  reads, default-role resolution, and active-endpoint enumeration.
+- The rebuilt diagnostic heartbeat now reports `cached=TRUE`, snapshot
+  sequence/state, cached endpoint identity, cached percentage/mute state,
+  callback counters, source/event, registration status, and error only.
+- Remaining production Core Audio reads are event-scoped:
+  `Audio\PACoreAudioService.pas:444` activates the bound endpoint during
+  startup or endpoint rebind; lines `454` and `455` register the callback;
+  lines `554` and `559` perform the one scalar/mute read for that binding.
+  `EnumAudioEndpoints` at line `605` and `GetDefaultAudioEndpoint` at line
+  `611` run during initial startup or after a device/default-endpoint
+  notification.
+- No periodic scalar/mute polling remains in the production service or the
+  service diagnostic probe. The separate PA-008A standalone probe retains its
+  independent enumeration/read behavior by design.
+- Focused audio tests, the diagnostic probe build, and the main Win64
+  application build passed with Delphi `dcc64.exe` version 36.0.
+- A read-only diagnostic probe run completed successfully and emitted no
+  `getScalarHr`, `fresh*`, `roles[...]`, or `active[...]` heartbeat fields.
+- `git diff --check` passed. No `--set` mode was executed.
+
+## PA-008B final live verification
+
+The user performed the following read-only live run:
+
+```text
+PAAudioServiceProbe.exe --continuous --diagnostics
+```
+
+The run verified:
+
+- The initial endpoint read completed successfully.
+- Master-volume changes on Speakers generated callback snapshots.
+- The default endpoint changed among Speakers, LG ULTRAFINE, and Headset
+  during the same process lifetime.
+- Endpoint-rebind snapshots were published without restarting the service.
+- Subsequent volume changes on Speakers and LG ULTRAFINE were detected through
+  callbacks after rebinding.
+- Diagnostic heartbeats reported `cached=TRUE` and no longer contained fresh
+  scalar/mute reads or periodic endpoint enumeration.
+- Enter terminated the probe cleanly with
+  `SHUTDOWN_COMPLETE status=success`.
+
+Counter scope observed and confirmed by the implementation:
+
+- `callbackProcessed` tracks the callback sequence for the currently bound
+  endpoint callback object. It resets when endpoint rebinding creates and
+  registers a new callback object.
+- `externalCount` counts callback notifications classified as external
+  because their event context differs from the service's own context. The
+  value is copied into the rebound snapshot and remains cumulative across
+  endpoint changes.
+
+This live evidence verifies callback-driven read-only monitoring and
+event-triggered endpoint replacement recovery. It does not verify the
+asynchronous `RequestMasterVolume` volume-setting API. That API remains
+covered by deterministic request validation only, and no `--set` mode was
+used.

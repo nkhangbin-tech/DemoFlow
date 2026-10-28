@@ -100,6 +100,7 @@ inconclusive result.
 
 ## Scope boundary
 
-PA-008B will define the production endpoint service only after developer
-runtime review of this probe. PA-009 volume rules and delta mode remain
-separate and are not implemented here.
+PA-008B defines the production endpoint service in
+`Audio\PACoreAudioService.pas`; its live notification and opt-in write checks
+remain separate from this read-only diagnostic. PA-009 volume rules and delta
+mode remain separate and are not implemented here.

@@ -19,6 +19,10 @@ const
     '{D666063F-1587-4E43-81F1-B948E807363F}';
   IID_IAudioEndpointVolume: TGUID =
     '{5CDF2C82-841E-4546-9722-0CF74078229A}';
+  IID_IAudioEndpointVolumeCallback: TGUID =
+    '{657804FA-D6AD-4496-8A60-352752AF4F89}';
+  IID_IMMNotificationClient: TGUID =
+    '{7991EEC9-7E89-4D85-8390-6C703CEC60C0}';
 
   DEVICE_STATE_ACTIVE = $00000001;
   STGM_READ = $00000000;
@@ -29,6 +33,17 @@ type
 
   IMMDeviceCollection = interface;
   IMMDevice = interface;
+  IAudioEndpointVolumeCallback = interface;
+  IMMNotificationClient = interface;
+
+  TAudioVolumeNotificationData = record
+    Callback: TGUID;
+    Muted: BOOL;
+    MasterVolume: Single;
+    Channels: UINT;
+    ChannelVolumes: array[0..0] of Single;
+  end;
+  PAudioVolumeNotificationData = ^TAudioVolumeNotificationData;
 
   IMMDeviceEnumerator = interface(IUnknown)
     ['{A95664D2-9614-4F35-A746-DE8DB63617E6}']
@@ -38,6 +53,10 @@ type
       out Endpoint: IMMDevice): HRESULT; stdcall;
     function GetDevice(DeviceId: PWideChar;
       out Device: IMMDevice): HRESULT; stdcall;
+    function RegisterEndpointNotificationCallback(
+      Client: IMMNotificationClient): HRESULT; stdcall;
+    function UnregisterEndpointNotificationCallback(
+      Client: IMMNotificationClient): HRESULT; stdcall;
   end;
 
   IMMDeviceCollection = interface(IUnknown)
@@ -58,10 +77,30 @@ type
     function GetState(out State: DWORD): HRESULT; stdcall;
   end;
 
+  IAudioEndpointVolumeCallback = interface(IUnknown)
+    ['{657804FA-D6AD-4496-8A60-352752AF4F89}']
+    function OnNotify(NotificationData: PAudioVolumeNotificationData): HRESULT;
+      stdcall;
+  end;
+
+  IMMNotificationClient = interface(IUnknown)
+    ['{7991EEC9-7E89-4D85-8390-6C703CEC60C0}']
+    function OnDeviceStateChanged(DeviceId: PWideChar;
+      NewState: DWORD): HRESULT; stdcall;
+    function OnDeviceAdded(DeviceId: PWideChar): HRESULT; stdcall;
+    function OnDeviceRemoved(DeviceId: PWideChar): HRESULT; stdcall;
+    function OnDefaultDeviceChanged(DataFlow: EDataFlow; Role: ERole;
+      DefaultDeviceId: PWideChar): HRESULT; stdcall;
+    function OnPropertyValueChanged(DeviceId: PWideChar;
+      const Key: TPropertyKey): HRESULT; stdcall;
+  end;
+
   IAudioEndpointVolume = interface(IUnknown)
     ['{5CDF2C82-841E-4546-9722-0CF74078229A}']
-    function RegisterControlChangeNotify(Notify: IUnknown): HRESULT; stdcall;
-    function UnregisterControlChangeNotify(Notify: IUnknown): HRESULT; stdcall;
+    function RegisterControlChangeNotify(
+      Notify: IAudioEndpointVolumeCallback): HRESULT; stdcall;
+    function UnregisterControlChangeNotify(
+      Notify: IAudioEndpointVolumeCallback): HRESULT; stdcall;
     function GetChannelCount(out ChannelCount: UINT): HRESULT; stdcall;
     function SetMasterVolumeLevel(LevelDB: Single;
       EventContext: PGUID): HRESULT; stdcall;

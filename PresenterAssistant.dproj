@@ -92,6 +92,8 @@
         <DCCReference Include="Domain\PADomainTypes.pas"/>
         <DCCReference Include="Infrastructure\PALogger.pas"/>
         <DCCReference Include="PowerPoint\PAPowerPointMonitor.pas"/>
+        <DCCReference Include="CoreAudio\PACoreAudioApi.pas"/>
+        <DCCReference Include="Audio\PACoreAudioService.pas"/>
         <DCCReference Include="tools\generated\PowerPoint_TLB.pas"/>
         <DCCReference Include="tools\generated\Office_TLB.pas"/>
         <DCCReference Include="tools\generated\VBIDE_TLB.pas"/>

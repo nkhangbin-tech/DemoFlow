@@ -9,6 +9,7 @@
 | Pre-transition event handling | ARCHITECTURE | PA-007A, PA-007B | Event invalidation/post-poll tests; production monitor records events and polls afterward |
 | Explicit build uncertainty | CONFIGURATION_SCHEMA, TEST_PLAN | PA-006B, PA-007A, PA-007B, PA-013 | Verified/unavailable/ambiguous build tests |
 | Default endpoint master volume | ARCHITECTURE | PA-008A, PA-008B | Read-only probe build/runtime test, then service test |
+| Core Audio service snapshots and requests | ARCHITECTURE | PA-008B | Service harness, read-only service probe, and live device test |
 | Domain state contracts | ARCHITECTURE, CONFIGURATION_SCHEMA | PA-004A | Domain harness and default-state tests |
 | Effective volume arithmetic | CONFIGURATION_SCHEMA | PA-004A | Boundary, offset, and clipping tests |
 | JSON configuration parsing | CONFIGURATION_SCHEMA | PA-004B | Valid/invalid parser harness tests |
@@ -16,7 +17,7 @@
 | Configuration round-trip/save/reload | CONFIGURATION_SCHEMA | PA-004B | Serialization and isolated file tests |
 | Volume selectors/priority | CONFIGURATION_SCHEMA | PA-004B, PA-009 | Selector, priority, tie-rejection tests |
 | Volume delta math | CONFIGURATION_SCHEMA | PA-009 | Command-context and no-drift tests |
-| Endpoint callback cleanup | ARCHITECTURE | PA-008B | Unregister-before-release test |
+| Endpoint callback cleanup | ARCHITECTURE | PA-008B | Worker teardown implementation and live shutdown review |
 | Window tracking | ARCHITECTURE | PA-010 | Fake and real window tests |
 | Input capture safe default | ARCHITECTURE | PA-011 | Capture-only non-suppression test |
 | Synchronous input suppression | ARCHITECTURE | PA-011, PA-012 | Snapshot, queue-full, dispatch-failure tests |
