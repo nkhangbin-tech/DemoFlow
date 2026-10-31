@@ -101,6 +101,19 @@ begin
       Exit(True);
 end;
 
+function HasErrorForScene(const ResultValue: TSceneCompileResult;
+  const FieldName, SceneId: string): Boolean;
+var
+  Diagnostic: TSceneCompileDiagnostic;
+begin
+  Result := False;
+  for Diagnostic in ResultValue.Diagnostics do
+    if (Diagnostic.Severity = dsError) and
+      (Diagnostic.FieldName = FieldName) and
+      (Diagnostic.SceneId = SceneId) then
+      Exit(True);
+end;
+
 procedure FreeResult(var ResultValue: TSceneCompileResult);
 begin
   ResultValue.Snapshot.Free;
@@ -192,6 +205,16 @@ begin
   FreeResult(Compiled);
 
   Request := MakeRequest;
+  SetLength(Request.Adjacencies, Length(Request.Adjacencies) + 1);
+  Request.Adjacencies[High(Request.Adjacencies)] :=
+    Adj('unknown-scene', '', '');
+  Compiled := CompileSceneList(Request);
+  AssertTrue('Orphan adjacency rejected',
+    (not Compiled.Success) and (Compiled.Snapshot = nil) and
+    HasErrorForScene(Compiled, 'Adjacencies', 'unknown-scene'));
+  FreeResult(Compiled);
+
+  Request := MakeRequest;
   SetLength(Request.Scenes, 0);
   SetLength(Request.PhysicalMappings, 0);
   SetLength(Request.Adjacencies, 0);
@@ -203,16 +226,17 @@ end;
 
 procedure TestOwnership;
 var
-  Request, Changed: TSceneCompileRequest;
+  Request: TSceneCompileRequest;
   Compiled, Failed: TSceneCompileResult;
   Returned: TCompiledScene;
   ReturnedScenes: TArray<TCompiledScene>;
 begin
   Request := MakeRequest;
   Compiled := CompileSceneList(Request);
-  Changed := MakeRequest;
-  Changed.Scenes[0].SceneId := 'changed-source';
-  Changed.Scenes[1].ExplicitVolumePercent := 99;
+  Request.Scenes[0].SceneId := 'changed-source';
+  Request.Scenes[1].ExplicitVolumePercent := 99;
+  Request.PhysicalResources[0].ResourceId := 'changed-physical-resource';
+  Request.PhysicalResources[0].PhysicalSlideNumber := 99;
   Returned := Compiled.Snapshot.GetScene(0);
   Returned.SceneId := 'changed-return';
   Returned.ExplicitVolumePercent := 1;
@@ -221,13 +245,17 @@ begin
   AssertTrue('Source mutation cannot change compiled data',
     (Compiled.Snapshot.GetScene(0).SceneId = 'ppt-3') and
     (Compiled.Snapshot.GetScene(1).ExplicitVolumePercent = 40));
+  AssertTrue('Source physical-resource mutation cannot change compiled data',
+    (Compiled.Snapshot.GetPhysicalResource(0).ResourceId =
+      'physical-ppt-3') and
+    (Compiled.Snapshot.GetPhysicalResource(0).PhysicalSlideNumber = 3));
   AssertTrue('Returned-data mutation cannot change compiled internals',
     (Compiled.Snapshot.GetScene(0).SceneId = 'ppt-3') and
     (Compiled.Snapshot.GetScene(1).SceneId = 'ppt-4'));
 
-  Changed := MakeRequest;
-  Changed.Scenes[0].ExplicitVolumePercent := 101;
-  Failed := CompileSceneList(Changed);
+  Request := MakeRequest;
+  Request.Scenes[0].ExplicitVolumePercent := 101;
+  Failed := CompileSceneList(Request);
   AssertTrue('Subsequent failure leaves prior snapshot unchanged',
     (not Failed.Success) and
     (Compiled.Snapshot.GetScene(0).ExplicitVolumePercent = 30));

@@ -367,6 +367,15 @@ begin
     end;
   end;
   for Index := 0 to High(Request.Adjacencies) do
+  begin
+    if FindSceneIndex(Request.Scenes,
+      Request.Adjacencies[Index].SceneId) < 0 then
+    begin
+      AddDiagnostic(Diagnostics, -1, Request.Adjacencies[Index].SceneId,
+        'Adjacencies',
+        'Adjacency declaration references an unknown logical SceneId.');
+      Result := False;
+    end;
     if FindAdjacencyIndex(Request.Adjacencies,
       Request.Adjacencies[Index].SceneId) <> Index then
     begin
@@ -374,6 +383,7 @@ begin
         'Adjacencies', 'Each SceneId may have only one adjacency declaration.');
       Result := False;
     end;
+  end;
 end;
 
 constructor TCompiledRuntimeSnapshot.Create(const AuthoringRevision: string;
