@@ -302,6 +302,8 @@ var
       begin
         if not First then
         begin
+          if Position > Length(Text) then
+            Exit;
           if Text[Position] <> ',' then
             Exit;
           Inc(Position);
@@ -354,6 +356,8 @@ var
         Exit;
       Inc(Index);
       SkipWhitespace;
+      if Position > Length(Text) then
+        Exit;
       if Text[Position] = ',' then
       begin
         Inc(Position);
@@ -440,9 +444,9 @@ begin
       TJSONNumber.Create(ProjectFormatVersion));
     Root.AddPair('authoringRevision', Document.AuthoringRevision);
     Scenes := TJSONArray.Create;
+    Root.AddPair('scenes', Scenes);
     for Scene in Document.Scenes do
       Scenes.AddElement(SceneToJson(Scene));
-    Root.AddPair('scenes', Scenes);
     Result := Root.ToJSON;
   finally
     Root.Free;

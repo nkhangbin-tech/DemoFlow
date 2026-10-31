@@ -4,6 +4,7 @@ program PASceneDocumentCodecTests;
 
 uses
   System.SysUtils,
+  System.StrUtils,
   PADomainTypes in '..\Domain\PADomainTypes.pas',
   PASceneDomain in '..\Domain\PASceneDomain.pas',
   PASceneDocumentCodec in '..\Persistence\PASceneDocumentCodec.pas';
@@ -110,42 +111,80 @@ begin
     (Parsed.Document.AuthoringRevision = '');
 end;
 
-procedure AssertInvalidFixture(const Name, Text, Path: string);
+procedure AssertInvalidFixture(const Name, Text, Path: string;
+  AllowEmpty: Boolean = False);
 var
   Parsed: TSceneDocumentResult;
 begin
-  AssertTrue(Name + ' fixture is nonempty', Text <> '');
+  AssertTrue(Name + ' fixture is constructed',
+    AllowEmpty or (Text <> ''));
   Parsed := ParseSceneDocument(Text);
   AssertTrue(Name + ' rejected', not Parsed.Success);
   AssertTrue(Name + ' diagnostic path', HasSchemaPath(Parsed, Path));
   AssertTrue(Name + ' has no partial document', HasNoDocument(Parsed));
 end;
 
+function CountOccurrences(const Text, Substring: string): Integer;
+var
+  Offset: Integer;
+begin
+  Result := 0;
+  Offset := 1;
+  while PosEx(Substring, Text, Offset) > 0 do
+  begin
+    Inc(Result);
+    Offset := PosEx(Substring, Text, Offset) + Length(Substring);
+  end;
+end;
+
+procedure AssertSubstitutionFixture(const Name, Base, OldValue, NewValue,
+  Path: string; ExpectedCount: Integer);
+var
+  Text: string;
+begin
+  AssertTrue(Name + ' source occurrence count',
+    CountOccurrences(Base, OldValue) = ExpectedCount);
+  Text := StringReplace(Base, OldValue, NewValue, []);
+  AssertTrue(Name + ' fixture changed', Text <> Base);
+  AssertInvalidFixture(Name, Text, Path);
+end;
+
+procedure AssertSerializationFailure(const Name: string;
+  const Document: TSceneAuthoringSnapshot);
+var
+  Before: TSceneAuthoringSnapshot;
+  Raised: Boolean;
+begin
+  Before := CopyDocument(Document);
+  Raised := False;
+  try
+    SerializeSceneDocument(Document);
+  except
+    on E: EArgumentException do
+      Raised := True;
+  end;
+  AssertTrue(Name + ' raises EArgumentException', Raised);
+  AssertTrue(Name + ' preserves input snapshot', SameDocument(Document, Before));
+end;
+
 procedure TestSerializationFailures;
 var
   Document: TSceneAuthoringSnapshot;
-  Raised: Boolean;
 begin
   Document := MakeDocument;
   Document.Scenes[0].SceneKind := skUnknown;
-  Raised := False;
-  try
-    SerializeSceneDocument(Document);
-  except
-    on E: EArgumentException do
-      Raised := True;
-  end;
-  AssertTrue('Unsupported skUnknown SceneKind raises', Raised);
+  AssertSerializationFailure('Unsupported skUnknown SceneKind in first Scene',
+    Document);
 
-  Document.Scenes[0].SceneKind := TSceneKind(99);
-  Raised := False;
-  try
-    SerializeSceneDocument(Document);
-  except
-    on E: EArgumentException do
-      Raised := True;
-  end;
-  AssertTrue('Out-of-range SceneKind raises', Raised);
+  Document := MakeDocument;
+  Document.Scenes[1].SceneKind := TSceneKind(99);
+  AssertSerializationFailure(
+    'Out-of-range SceneKind after one valid Scene', Document);
+
+  Document := MakeDocument;
+  Document.Scenes[2].SceneKind := skUnknown;
+  AssertSerializationFailure(
+    'Unsupported skUnknown SceneKind after multiple valid Scenes', Document);
 end;
 
 procedure TestRoundTrips;
@@ -205,31 +244,37 @@ end;
 
 procedure TestSchemaFailures;
 var
-  Base, Text: string;
+  Base: string;
 begin
   Base := SerializeSceneDocument(MakeDocument);
   AssertInvalidFixture('Malformed JSON', '{', '');
   AssertInvalidFixture('Incorrect root type', '[]', '');
-  Text := StringReplace(Base, 'PA.SceneProject', 'Legacy', []);
-  AssertTrue('Document type fixture changed', Text <> Base);
-  AssertInvalidFixture('Incorrect documentType', Text, '/documentType');
-  Text := StringReplace(Base, '"projectFormatVersion":1',
-    '"projectFormatVersion":2', []);
-  AssertTrue('Version fixture changed', Text <> Base);
-  AssertInvalidFixture('Unsupported document version', Text,
-    '/projectFormatVersion');
-  Text := StringReplace(Base, '"authoringRevision":"revision-9",', '', []);
-  AssertTrue('Missing revision fixture changed', Text <> Base);
-  AssertInvalidFixture('Missing required field', Text, '/authoringRevision');
-  Text := StringReplace(Base, '"explicitVolumePercent":0',
-    '"explicitVolumePercent":"zero"', []);
-  AssertTrue('Wrong type fixture changed', Text <> Base);
-  AssertInvalidFixture('Wrong field type', Text,
-    '/scenes/0/explicitVolumePercent');
-  Text := StringReplace(Base, '"externalAppTargetReference":"external-app"',
-    '"extra":1,"externalAppTargetReference":"external-app"', []);
-  AssertTrue('Unknown property fixture changed', Text <> Base);
-  AssertInvalidFixture('Unknown property', Text, '/scenes/2/extra');
+  AssertInvalidFixture('Truncated array', '[1', '');
+  AssertInvalidFixture('Truncated scenes array',
+    '{"documentType":"PA.SceneProject","projectFormatVersion":1,' +
+    '"authoringRevision":"","scenes":[1', '');
+  AssertInvalidFixture('Truncated nested array',
+    '{"documentType":"PA.SceneProject","projectFormatVersion":1,' +
+    '"authoringRevision":"","scenes":[[1', '');
+  AssertInvalidFixture('Array missing terminator',
+    '{"documentType":"PA.SceneProject","projectFormatVersion":1,' +
+    '"authoringRevision":"","scenes":[1,2}', '');
+  AssertInvalidFixture('Empty input', '', '', True);
+  AssertInvalidFixture('Whitespace-only input', '  '#9#10, '');
+  AssertSubstitutionFixture('Incorrect documentType', Base,
+    'PA.SceneProject', 'Legacy', '/documentType', 1);
+  AssertSubstitutionFixture('Unsupported document version', Base,
+    '"projectFormatVersion":1', '"projectFormatVersion":2',
+    '/projectFormatVersion', 1);
+  AssertSubstitutionFixture('Missing required field', Base,
+    '"authoringRevision":"revision-9",', '', '/authoringRevision', 1);
+  AssertSubstitutionFixture('Wrong field type', Base,
+    '"explicitVolumePercent":0', '"explicitVolumePercent":"zero"',
+    '/scenes/0/explicitVolumePercent', 1);
+  AssertSubstitutionFixture('Unknown property', Base,
+    '"externalAppTargetReference":"external-app"',
+    '"extra":1,"externalAppTargetReference":"external-app"',
+    '/scenes/2/extra', 1);
   AssertInvalidFixture('Legacy JSON v1 document',
     '{"schemaVersion":1,"mode":"passThrough","audio":{},"browserProfiles":[],"sequence":[]}',
     '/documentType');
@@ -247,31 +292,27 @@ begin
     '"sceneKind":"browser","explicitVolumePercent":0,' +
     '"powerPointLogicalSlide":1,"browserTargetReference":"","externalAppTargetReference":""}]}',
     '/scenes/0/sceneKind');
-  AssertInvalidFixture('Invalid SceneKind',
-    StringReplace(Base, '"sceneKind":"powerPoint"', '"sceneKind":"invalid"', []),
-    '/scenes/0/sceneKind');
-  AssertInvalidFixture('Integer overflow',
-    StringReplace(Base, '"explicitVolumePercent":0',
-      '"explicitVolumePercent":999999999999999999999999', []),
-    '/scenes/0/explicitVolumePercent');
-  AssertInvalidFixture('Fractional number',
-    StringReplace(Base, '"explicitVolumePercent":0',
-      '"explicitVolumePercent":1.5', []),
-    '/scenes/0/explicitVolumePercent');
-  AssertInvalidFixture('Exponent notation',
-    StringReplace(Base, '"explicitVolumePercent":0',
-      '"explicitVolumePercent":1e2', []),
-    '/scenes/0/explicitVolumePercent');
-  AssertInvalidFixture('Negative project version',
-    StringReplace(Base, '"projectFormatVersion":1',
-      '"projectFormatVersion":-1', []),
-    '/projectFormatVersion');
-  AssertInvalidFixture('Non-object Scene',
-    StringReplace(Base, '"scenes":[', '"scenes":[1,', []),
-    '/scenes/0');
-  AssertInvalidFixture('Missing Scene property',
-    StringReplace(Base, '"browserTargetReference":"browser-profile",', '', []),
-    '/scenes/1/browserTargetReference');
+  AssertSubstitutionFixture('Invalid SceneKind', Base,
+    '"sceneKind":"powerPoint"', '"sceneKind":"invalid"',
+    '/scenes/0/sceneKind', 1);
+  AssertSubstitutionFixture('Integer overflow', Base,
+    '"explicitVolumePercent":0',
+    '"explicitVolumePercent":999999999999999999999999',
+    '/scenes/0/explicitVolumePercent', 1);
+  AssertSubstitutionFixture('Fractional number', Base,
+    '"explicitVolumePercent":0', '"explicitVolumePercent":1.5',
+    '/scenes/0/explicitVolumePercent', 1);
+  AssertSubstitutionFixture('Exponent notation', Base,
+    '"explicitVolumePercent":0', '"explicitVolumePercent":1e2',
+    '/scenes/0/explicitVolumePercent', 1);
+  AssertSubstitutionFixture('Negative project version', Base,
+    '"projectFormatVersion":1', '"projectFormatVersion":-1',
+    '/projectFormatVersion', 1);
+  AssertSubstitutionFixture('Non-object Scene', Base, '"scenes":[',
+    '"scenes":[1,', '/scenes/0', 1);
+  AssertSubstitutionFixture('Missing Scene property', Base,
+    '"browserTargetReference":"browser-profile",', '',
+    '/scenes/1/browserTargetReference', 1);
   AssertInvalidFixture('Wrong root property type',
     '{"documentType":"PA.SceneProject","projectFormatVersion":1,' +
     '"authoringRevision":"","scenes":"not-an-array"}',
