@@ -237,6 +237,10 @@ begin
     '{"documentType":"PA.SceneProject","documentType":"PA.SceneProject",' +
     '"projectFormatVersion":1,"authoringRevision":"","scenes":[]}',
     '/documentType');
+  AssertInvalidFixture('Duplicate escaped root property',
+    '{"documentType":"PA.SceneProject","\u0064ocumentType":"PA.SceneProject",' +
+    '"projectFormatVersion":1,"authoringRevision":"","scenes":[]}',
+    '/documentType');
   AssertInvalidFixture('Duplicate Scene property',
     '{"documentType":"PA.SceneProject","projectFormatVersion":1,' +
     '"authoringRevision":"","scenes":[{"sceneId":"a","sceneKind":"powerPoint",' +

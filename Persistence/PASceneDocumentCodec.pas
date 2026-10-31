@@ -260,6 +260,21 @@ var
     end;
   end;
 
+  function DecodePropertyName(const RawValue: string): string;
+  var
+    ParsedValue: TJSONValue;
+  begin
+    ParsedValue := TJSONObject.ParseJSONValue('"' + RawValue + '"');
+    try
+      if ParsedValue is TJSONString then
+        Result := TJSONString(ParsedValue).Value
+      else
+        Result := RawValue;
+    finally
+      ParsedValue.Free;
+    end;
+  end;
+
   procedure SkipWhitespace;
   begin
     while (Position <= Length(Text)) and
@@ -294,6 +309,7 @@ var
         end;
         if not ParseString(Name) then
           Exit;
+        Name := DecodePropertyName(Name);
         MemberPath := Path + '/' + Name;
         if Names.IndexOf(Name) >= 0 then
         begin
