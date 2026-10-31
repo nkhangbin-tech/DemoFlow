@@ -28,6 +28,7 @@ function ParseSceneDocument(const Text: string): TSceneDocumentResult;
 implementation
 
 uses
+  System.Classes,
   System.Generics.Collections,
   System.SysUtils;
 
@@ -127,7 +128,8 @@ begin
     skExternalApp:
       Result := 'externalApp';
   else
-    Result := '';
+    raise EArgumentException.CreateFmt(
+      'Unsupported SceneKind value %d.', [Ord(Kind)]);
   end;
 end;
 
@@ -226,6 +228,166 @@ begin
   Result := TJSONObject(Value);
 end;
 
+function FindDuplicateProperties(const Text: string;
+  var Diagnostics: TArray<TSceneSchemaDiagnostic>): Boolean;
+var
+  Position: Integer;
+  DummyString: string;
+
+  function ParseValue(const Path: string): Boolean; forward;
+
+  function ParseString(out Value: string): Boolean;
+  var
+    Start: Integer;
+  begin
+    Result := False;
+    if (Position > Length(Text)) or (Text[Position] <> '"') then
+      Exit;
+    Inc(Position);
+    Start := Position;
+    while Position <= Length(Text) do
+    begin
+      if Text[Position] = '\' then
+        Inc(Position, 2)
+      else if Text[Position] = '"' then
+      begin
+        Value := Copy(Text, Start, Position - Start);
+        Inc(Position);
+        Exit(True);
+      end
+      else
+        Inc(Position);
+    end;
+  end;
+
+  procedure SkipWhitespace;
+  begin
+    while (Position <= Length(Text)) and
+      CharInSet(Text[Position], [' ', #9, #10, #13]) do
+      Inc(Position);
+  end;
+
+  function ParseObject(const Path: string): Boolean;
+  var
+    Names: TStringList;
+    Name, MemberPath: string;
+    First: Boolean;
+  begin
+    Result := False;
+    if (Position > Length(Text)) or (Text[Position] <> '{') then
+      Exit;
+    Inc(Position);
+    Names := TStringList.Create;
+    try
+      Names.Sorted := True;
+      Names.Duplicates := dupIgnore;
+      SkipWhitespace;
+      First := True;
+      while (Position <= Length(Text)) and (Text[Position] <> '}') do
+      begin
+        if not First then
+        begin
+          if Text[Position] <> ',' then
+            Exit;
+          Inc(Position);
+          SkipWhitespace;
+        end;
+        if not ParseString(Name) then
+          Exit;
+        MemberPath := Path + '/' + Name;
+        if Names.IndexOf(Name) >= 0 then
+        begin
+          AddSchemaDiagnostic(Diagnostics, MemberPath,
+            'Duplicate property.');
+          Result := True;
+        end
+        else
+          Names.Add(Name);
+        SkipWhitespace;
+        if (Position > Length(Text)) or (Text[Position] <> ':') then
+          Exit;
+        Inc(Position);
+        SkipWhitespace;
+        if not ParseValue(MemberPath) then
+          Exit;
+        SkipWhitespace;
+        First := False;
+      end;
+      if (Position > Length(Text)) or (Text[Position] <> '}') then
+        Exit;
+      Inc(Position);
+      Result := True;
+    finally
+      Names.Free;
+    end;
+  end;
+
+  function ParseArray(const Path: string): Boolean;
+  var
+    Index: Integer;
+  begin
+    Result := False;
+    if (Position > Length(Text)) or (Text[Position] <> '[') then
+      Exit;
+    Inc(Position);
+    SkipWhitespace;
+    Index := 0;
+    while (Position <= Length(Text)) and (Text[Position] <> ']') do
+    begin
+      if not ParseValue(Format('%s/%d', [Path, Index])) then
+        Exit;
+      Inc(Index);
+      SkipWhitespace;
+      if Text[Position] = ',' then
+      begin
+        Inc(Position);
+        SkipWhitespace;
+      end
+      else if Text[Position] <> ']' then
+        Exit;
+    end;
+    if (Position > Length(Text)) or (Text[Position] <> ']') then
+      Exit;
+    Inc(Position);
+    Result := True;
+  end;
+
+  function ParsePrimitive: Boolean;
+  begin
+    while (Position <= Length(Text)) and
+      not CharInSet(Text[Position], [',', '}', ']', ' ', #9, #10, #13]) do
+      Inc(Position);
+    Result := True;
+  end;
+
+  function ParseValue(const Path: string): Boolean;
+  begin
+    SkipWhitespace;
+    if Position > Length(Text) then
+      Exit(False);
+    case Text[Position] of
+      '{':
+        Result := ParseObject(Path);
+      '[':
+        Result := ParseArray(Path);
+      '"':
+        begin
+          Result := ParseString(DummyString);
+        end;
+    else
+      Result := ParsePrimitive;
+    end;
+  end;
+begin
+  Result := False;
+  Position := 1;
+  if ParseValue('') then
+  begin
+    SkipWhitespace;
+    Result := Position > Length(Text);
+  end;
+end;
+
 function NewObject: TJSONObject;
 begin
   Result := TJSONObject.Create;
@@ -233,6 +395,9 @@ end;
 
 function SceneToJson(const Scene: TSceneDefinition): TJSONObject;
 begin
+  if not (Scene.SceneKind in [skPowerPoint, skBrowser, skExternalApp]) then
+    raise EArgumentException.CreateFmt(
+      'Unsupported SceneKind value %d.', [Ord(Scene.SceneKind)]);
   Result := NewObject;
   Result.AddPair('sceneId', Scene.SceneId);
   Result.AddPair('sceneKind', SceneKindToText(Scene.SceneKind));
@@ -277,6 +442,7 @@ var
   Index: Integer;
 begin
   Result := Default(TSceneDocumentResult);
+  FindDuplicateProperties(Text, Result.SchemaDiagnostics);
   Root := ParseJsonText(Text, Result.SchemaDiagnostics);
   if Root = nil then
     Exit;
