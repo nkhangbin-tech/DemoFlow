@@ -10,13 +10,11 @@ object MainForm: TMainForm
   Font.Height = -11
   Font.Name = 'Segoe UI'
   Font.Style = []
-  OldCreateOrder = False
   Position = poScreenCenter
-  PixelsPerInch = 96
-  TextHeight = 13
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize
+  TextHeight = 13
   object StatusLabel: TLabel
     Left = 24
     Top = 28
@@ -29,22 +27,22 @@ object MainForm: TMainForm
   object LoggerStatusLabel: TLabel
     Left = 24
     Top = 68
-    Width = 560
-    Height = 17
+    Width = 113
+    Height = 13
     Caption = 'Logger: not initialized'
   end
   object ConfigurationStatusLabel: TLabel
     Left = 24
     Top = 92
-    Width = 560
-    Height = 17
+    Width = 136
+    Height = 13
     Caption = 'Configuration: not loaded'
   end
   object SafeModeStatusLabel: TLabel
     Left = 24
     Top = 116
-    Width = 560
-    Height = 17
+    Width = 114
+    Height = 13
     Caption = 'Safe mode: evaluating'
   end
   object ConfigurationPathLabel: TLabel
@@ -68,8 +66,8 @@ object MainForm: TMainForm
   object PowerPointStatusLabel: TLabel
     Left = 24
     Top = 220
-    Width = 560
-    Height = 17
+    Width = 166
+    Height = 13
     Caption = 'PowerPoint monitor: not started'
   end
   object PowerPointDetailsLabel: TLabel
@@ -82,13 +80,22 @@ object MainForm: TMainForm
     WordWrap = True
   end
   object CloseButton: TButton
-    Left = 264
+    Left = 45
     Top = 300
     Width = 92
     Height = 29
     Caption = 'Hide to tray'
     TabOrder = 0
     OnClick = CloseButtonClick
+  end
+  object btnShowWellcome: TButton
+    Left = 288
+    Top = 302
+    Width = 113
+    Height = 25
+    Caption = 'btnShowWellcome'
+    TabOrder = 1
+    OnClick = btnShowWellcomeClick
   end
   object MonitorTimer: TTimer
     Enabled = False
@@ -126,7 +133,6 @@ object MainForm: TMainForm
   end
   object TrayIcon: TTrayIcon
     PopupMenu = TrayPopupMenu
-    Visible = False
     OnDblClick = TrayIconDblClick
     Left = 72
     Top = 224

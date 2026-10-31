@@ -35,6 +35,7 @@ type
     PowerPointStatusLabel: TLabel;
     PowerPointDetailsLabel: TLabel;
     MonitorTimer: TTimer;
+    btnShowWellcome: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormResize(Sender: TObject);
@@ -44,6 +45,7 @@ type
     procedure ReloadMenuItemClick(Sender: TObject);
     procedure ExitMenuItemClick(Sender: TObject);
     procedure MonitorTimerTimer(Sender: TObject);
+    procedure btnShowWellcomeClick(Sender: TObject);
   private
     FLogger: TLogger;
     FConfigurationStore: TConfigurationStore;
@@ -72,7 +74,7 @@ var
   MainForm: TMainForm;
 
 implementation
-
+uses uWelcomeForm;
 {$R *.dfm}
 
 function TMainForm.ApplicationDataDirectory: string;
@@ -396,19 +398,25 @@ end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  if not FFinalExitRequested then
+{  if not FFinalExitRequested then
   begin
     Action := caNone;
     HideToTray;
     Exit;
   end;
   StopApplication;
+}
 end;
 
 procedure TMainForm.FormResize(Sender: TObject);
 begin
   if WindowState = wsMinimized then
     HideToTray;
+end;
+
+procedure TMainForm.btnShowWellcomeClick(Sender: TObject);
+begin
+    uWelcomeForm.WelcomeForm.Show;
 end;
 
 procedure TMainForm.CloseButtonClick(Sender: TObject);

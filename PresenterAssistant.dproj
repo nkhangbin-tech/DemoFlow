@@ -92,11 +92,14 @@
         <DCCReference Include="Domain\PADomainTypes.pas"/>
         <DCCReference Include="Infrastructure\PALogger.pas"/>
         <DCCReference Include="PowerPoint\PAPowerPointMonitor.pas"/>
-        <DCCReference Include="CoreAudio\PACoreAudioApi.pas"/>
-        <DCCReference Include="Audio\PACoreAudioService.pas"/>
-        <DCCReference Include="tools\generated\PowerPoint_TLB.pas"/>
-        <DCCReference Include="tools\generated\Office_TLB.pas"/>
-        <DCCReference Include="tools\generated\VBIDE_TLB.pas"/>
+        <DCCReference Include="uDemoCardForm.pas">
+            <Form>DemoCardForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="uWelcomeForm.pas">
+            <Form>WelcomeForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
