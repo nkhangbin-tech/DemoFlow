@@ -8,7 +8,8 @@ uses
   PALogger in 'Infrastructure\PALogger.pas',
   PAPowerPointMonitor in 'PowerPoint\PAPowerPointMonitor.pas',
   uDemoCardForm in 'uDemoCardForm.pas' {DemoCardForm},
-  uWelcomeForm in 'uWelcomeForm.pas' {WelcomeForm};
+  uWelcomeForm in 'uWelcomeForm.pas' {WelcomeForm},
+  uSceneEditorForm in 'uSceneEditorForm.pas' {frmSceneEditor};
 
 {$R *.res}
 

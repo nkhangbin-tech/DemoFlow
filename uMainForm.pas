@@ -36,6 +36,7 @@ type
     PowerPointDetailsLabel: TLabel;
     MonitorTimer: TTimer;
     btnShowWellcome: TButton;
+    btnShowEditor: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormResize(Sender: TObject);
@@ -46,6 +47,7 @@ type
     procedure ExitMenuItemClick(Sender: TObject);
     procedure MonitorTimerTimer(Sender: TObject);
     procedure btnShowWellcomeClick(Sender: TObject);
+    procedure btnShowEditorClick(Sender: TObject);
   private
     FLogger: TLogger;
     FConfigurationStore: TConfigurationStore;
@@ -74,7 +76,7 @@ var
   MainForm: TMainForm;
 
 implementation
-uses uWelcomeForm;
+uses uWelcomeForm, uSceneEditorForm;
 {$R *.dfm}
 
 function TMainForm.ApplicationDataDirectory: string;
@@ -412,6 +414,13 @@ procedure TMainForm.FormResize(Sender: TObject);
 begin
   if WindowState = wsMinimized then
     HideToTray;
+end;
+
+procedure TMainForm.btnShowEditorClick(Sender: TObject);
+begin
+   If not Assigned(frmSceneEditor) then
+      frmSceneEditor:=TfrmSceneEditor.Create(self);
+   frmSceneEditor.Show;
 end;
 
 procedure TMainForm.btnShowWellcomeClick(Sender: TObject);

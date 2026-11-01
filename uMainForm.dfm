@@ -89,13 +89,22 @@ object MainForm: TMainForm
     OnClick = CloseButtonClick
   end
   object btnShowWellcome: TButton
-    Left = 288
+    Left = 192
     Top = 302
     Width = 113
     Height = 25
     Caption = 'btnShowWellcome'
     TabOrder = 1
     OnClick = btnShowWellcomeClick
+  end
+  object btnShowEditor: TButton
+    Left = 360
+    Top = 302
+    Width = 97
+    Height = 25
+    Caption = 'btnShowEditor'
+    TabOrder = 2
+    OnClick = btnShowEditorClick
   end
   object MonitorTimer: TTimer
     Enabled = False
