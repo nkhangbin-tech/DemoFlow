@@ -43,7 +43,7 @@ end;
 
 function MakeDocument: TSceneAuthoringSnapshot;
 begin
-  Result := Default(TSceneAuthoringSnapshot);
+  Result := NewSceneProject;
   Result.AuthoringRevision := 'file-store-revision';
   SetLength(Result.Scenes, 3);
   Result.Scenes[0] := MakeScene('ppt', skPowerPoint, 0, 3);
@@ -55,7 +55,8 @@ function SameDocument(const Left, Right: TSceneAuthoringSnapshot): Boolean;
 var
   Index: Integer;
 begin
-  Result := Left.AuthoringRevision = Right.AuthoringRevision;
+  Result := (Left.AuthoringRevision = Right.AuthoringRevision) and
+    (Left.PresentationBaseVolumePercent = Right.PresentationBaseVolumePercent);
   Result := Result and (Length(Left.Scenes) = Length(Right.Scenes));
   if not Result then
     Exit;

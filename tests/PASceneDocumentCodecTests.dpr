@@ -41,7 +41,7 @@ end;
 
 function MakeDocument: TSceneAuthoringSnapshot;
 begin
-  Result := Default(TSceneAuthoringSnapshot);
+  Result := NewSceneProject;
   Result.AuthoringRevision := 'revision-9';
   SetLength(Result.Scenes, 3);
   Result.Scenes[0] := MakeScene('ppt', skPowerPoint, 0, 3);
@@ -77,6 +77,7 @@ var
   Index: Integer;
 begin
   Result.AuthoringRevision := Source.AuthoringRevision;
+  Result.PresentationBaseVolumePercent := Source.PresentationBaseVolumePercent;
   SetLength(Result.Scenes, Length(Source.Scenes));
   for Index := 0 to High(Source.Scenes) do
     Result.Scenes[Index] := Source.Scenes[Index];
@@ -86,7 +87,8 @@ function SameDocument(const Left, Right: TSceneAuthoringSnapshot): Boolean;
 var
   Index: Integer;
 begin
-  Result := Left.AuthoringRevision = Right.AuthoringRevision;
+  Result := (Left.AuthoringRevision = Right.AuthoringRevision) and
+    (Left.PresentationBaseVolumePercent = Right.PresentationBaseVolumePercent);
   Result := Result and (Length(Left.Scenes) = Length(Right.Scenes));
   if not Result then
     Exit;
@@ -231,7 +233,7 @@ begin
   Document.Scenes[0] := MakeScene('incomplete', skPowerPoint, -1, 0);
   Parsed := ParseSceneDocument(SerializeSceneDocument(Document));
   ParsedDocument := Parsed.Document;
-  AssertTrue('Out-of-range volume preserved without normalization',
+  AssertTrue('No-override volume preserved without normalization',
     Parsed.Success and (ParsedDocument.Scenes[0].ExplicitVolumePercent = -1));
   AssertTrue('Incomplete editable draft round-trip',
     Parsed.Success and HasAuthoringField(Parsed, 'PowerPointLogicalSlide'));
@@ -264,7 +266,7 @@ begin
   AssertSubstitutionFixture('Incorrect documentType', Base,
     'PA.SceneProject', 'Legacy', '/documentType', 1);
   AssertSubstitutionFixture('Unsupported document version', Base,
-    '"projectFormatVersion":1', '"projectFormatVersion":2',
+    '"projectFormatVersion":2', '"projectFormatVersion":3',
     '/projectFormatVersion', 1);
   AssertSubstitutionFixture('Missing required field', Base,
     '"authoringRevision":"revision-9",', '', '/authoringRevision', 1);
@@ -306,7 +308,7 @@ begin
     '"explicitVolumePercent":0', '"explicitVolumePercent":1e2',
     '/scenes/0/explicitVolumePercent', 1);
   AssertSubstitutionFixture('Negative project version', Base,
-    '"projectFormatVersion":1', '"projectFormatVersion":-1',
+    '"projectFormatVersion":2', '"projectFormatVersion":-1',
     '/projectFormatVersion', 1);
   AssertSubstitutionFixture('Non-object Scene', Base, '"scenes":[',
     '"scenes":[1,', '/scenes/0', 1);

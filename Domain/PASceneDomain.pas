@@ -18,6 +18,7 @@ type
   TSceneDefinition = record
     SceneId: TSceneId;
     SceneKind: TSceneKind;
+    // -1: no override; 0..100: absolute Windows master-volume target.
     ExplicitVolumePercent: Integer;
     // One-based logical slide number; physical Black Buffer placement is
     // resolved outside this authoring model.
@@ -29,6 +30,7 @@ type
   TSceneAuthoringSnapshot = record
     Scenes: TArray<TSceneDefinition>;
     AuthoringRevision: string;
+    PresentationBaseVolumePercent: Integer;
   end;
 
   TSceneValidationDiagnostic = record
@@ -39,6 +41,9 @@ type
     Description: string;
   end;
 
+// New project creation contract; a zero-initialized record still has base 0.
+function NewSceneProject: TSceneAuthoringSnapshot;
+
 function ValidateSceneList(
   const Snapshot: TSceneAuthoringSnapshot):
   TArray<TSceneValidationDiagnostic>;
@@ -48,6 +53,12 @@ implementation
 
 uses
   System.SysUtils;
+
+function NewSceneProject: TSceneAuthoringSnapshot;
+begin
+  Result := Default(TSceneAuthoringSnapshot);
+  Result.PresentationBaseVolumePercent := 50;
+end;
 
 function SceneKindName(Kind: TSceneKind): string;
 begin
@@ -135,11 +146,11 @@ begin
     AddDiagnostic(Diagnostics, dsError, SceneIndex, Scene.SceneId,
       'SceneKind', 'SceneKind is unknown or unsupported.');
 
-  if (Scene.ExplicitVolumePercent < 0) or
+  if (Scene.ExplicitVolumePercent < -1) or
     (Scene.ExplicitVolumePercent > 100) then
     AddDiagnostic(Diagnostics, dsError, SceneIndex, Scene.SceneId,
       'ExplicitVolumePercent',
-      'ExplicitVolumePercent must be an integer from 0 through 100.');
+      'ExplicitVolumePercent must be -1 (no override) or an integer from 0 through 100.');
 
   case Scene.SceneKind of
     skPowerPoint:

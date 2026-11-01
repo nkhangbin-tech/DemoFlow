@@ -17,6 +17,8 @@ type
   TSceneDocumentResult = record
     Success: Boolean;
     Document: TSceneAuthoringSnapshot;
+    // Original on-disk version, assigned only after successful parsing.
+    SourceFormatVersion: Integer;
     SchemaDiagnostics: TArray<TSceneSchemaDiagnostic>;
     AuthoringDiagnostics: TArray<TSceneValidationDiagnostic>;
   end;
@@ -34,7 +36,7 @@ uses
 
 const
   DocumentTypeName = 'PA.SceneProject';
-  ProjectFormatVersion = 1;
+  ProjectFormatVersion = 2;
 
 procedure AddSchemaDiagnostic(
   var Diagnostics: TArray<TSceneSchemaDiagnostic>;
@@ -437,11 +439,17 @@ var
   Scenes: TJSONArray;
   Scene: TSceneDefinition;
 begin
+  if (Document.PresentationBaseVolumePercent < 0) or
+    (Document.PresentationBaseVolumePercent > 100) then
+    raise EArgumentException.Create(
+      'PresentationBaseVolumePercent must be an integer from 0 through 100.');
   Root := NewObject;
   try
     Root.AddPair('documentType', DocumentTypeName);
     Root.AddPair('projectFormatVersion',
       TJSONNumber.Create(ProjectFormatVersion));
+    Root.AddPair('presentationBaseVolumePercent',
+      TJSONNumber.Create(Document.PresentationBaseVolumePercent));
     Root.AddPair('authoringRevision', Document.AuthoringRevision);
     Scenes := TJSONArray.Create;
     Root.AddPair('scenes', Scenes);
@@ -467,9 +475,8 @@ begin
   if Root = nil then
     Exit;
   try
-    CheckProperties(Root, '',
-      ['documentType', 'projectFormatVersion', 'authoringRevision',
-       'scenes'], Result.SchemaDiagnostics);
+    Version := 0;
+    Result.Document := NewSceneProject;
     Value := RequiredValue(Root, 'documentType', '',
       Result.SchemaDiagnostics);
     if Value <> nil then
@@ -483,9 +490,31 @@ begin
     begin
       Version := IntegerValue(Value, '/projectFormatVersion',
         Result.SchemaDiagnostics);
-      if Version <> ProjectFormatVersion then
+      if not (Version in [1, ProjectFormatVersion]) then
         AddSchemaDiagnostic(Result.SchemaDiagnostics,
-          '/projectFormatVersion', 'Only project format version 1 is supported.');
+          '/projectFormatVersion', 'Only project format versions 1 and 2 are supported.');
+    end;
+    if Version = 1 then
+      CheckProperties(Root, '',
+        ['documentType', 'projectFormatVersion', 'authoringRevision',
+         'scenes'], Result.SchemaDiagnostics)
+    else
+      CheckProperties(Root, '',
+        ['documentType', 'projectFormatVersion', 'authoringRevision',
+         'presentationBaseVolumePercent', 'scenes'], Result.SchemaDiagnostics);
+    if Version = 2 then
+    begin
+      Value := RequiredValue(Root, 'presentationBaseVolumePercent', '',
+        Result.SchemaDiagnostics);
+      if Value <> nil then
+      begin
+        Result.Document.PresentationBaseVolumePercent := IntegerValue(Value,
+          '/presentationBaseVolumePercent', Result.SchemaDiagnostics);
+        if (Result.Document.PresentationBaseVolumePercent < 0) or
+          (Result.Document.PresentationBaseVolumePercent > 100) then
+          AddSchemaDiagnostic(Result.SchemaDiagnostics,
+            '/presentationBaseVolumePercent', 'Expected an integer from 0 through 100.');
+      end;
     end;
     Value := RequiredValue(Root, 'authoringRevision',
       '', Result.SchemaDiagnostics);
@@ -509,6 +538,7 @@ begin
       Exit;
     end;
     Result.AuthoringDiagnostics := ValidateSceneList(Result.Document);
+    Result.SourceFormatVersion := Version;
     Result.Success := True;
   finally
     Root.Free;

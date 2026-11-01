@@ -68,6 +68,7 @@ var
 begin
   Result := Default(TSceneAuthoringSnapshot);
   Result.AuthoringRevision := Source.AuthoringRevision;
+  Result.PresentationBaseVolumePercent := Source.PresentationBaseVolumePercent;
   SetLength(Result.Scenes, Length(Source.Scenes));
   for Index := 0 to High(Source.Scenes) do
     Result.Scenes[Index] := Source.Scenes[Index];
@@ -88,6 +89,7 @@ var
   Index: Integer;
 begin
   Result := (Left.AuthoringRevision = Right.AuthoringRevision) and
+    (Left.PresentationBaseVolumePercent = Right.PresentationBaseVolumePercent) and
     (Length(Left.Scenes) = Length(Right.Scenes));
   if not Result then
     Exit;
@@ -166,9 +168,11 @@ begin
   Snapshot.Scenes[0] := MakePowerPointScene('volume-hundred', 100, 1);
   AssertTrue('Volume boundary 100 accepted', IsValid(Snapshot));
   Snapshot.Scenes[0] := MakePowerPointScene('volume-negative', -1, 1);
-  AssertTrue('Volume -1 rejected',
-    not IsValid(Snapshot) and HasDiagnostic(
-      ValidateSceneList(Snapshot), 'ExplicitVolumePercent', 'volume-negative'));
+  AssertTrue('Volume -1 accepted as no override', IsValid(Snapshot));
+  Snapshot.Scenes[0].ExplicitVolumePercent := -2;
+  AssertTrue('Volume -2 rejected', not IsValid(Snapshot));
+  Snapshot.Scenes[0].ExplicitVolumePercent := 50;
+  AssertTrue('Volume 50 accepted', IsValid(Snapshot));
   Snapshot.Scenes[0] := MakePowerPointScene('volume-over', 101, 1);
   AssertTrue('Volume 101 rejected', not IsValid(Snapshot));
 end;
@@ -239,7 +243,7 @@ var
 begin
   Snapshot := Default(TSceneAuthoringSnapshot);
   SetLength(Snapshot.Scenes, 1);
-  Snapshot.Scenes[0] := MakePowerPointScene('diagnostic-scene', -1, 1);
+  Snapshot.Scenes[0] := MakePowerPointScene('diagnostic-scene', -2, 1);
   Diagnostics := ValidateSceneList(Snapshot);
   AssertTrue('Diagnostics identify invalid Scene and field',
     HasErrorDiagnostic(Diagnostics, 0, 'ExplicitVolumePercent',
@@ -249,7 +253,7 @@ begin
   SetLength(Snapshot.Scenes, 1);
   Snapshot.Scenes[0].SceneId := ' ';
   Snapshot.Scenes[0].SceneKind := skUnknown;
-  Snapshot.Scenes[0].ExplicitVolumePercent := -1;
+  Snapshot.Scenes[0].ExplicitVolumePercent := -2;
   Diagnostics := ValidateSceneList(Snapshot);
   AssertTrue('Multi-error diagnostic count is predictable',
     Length(Diagnostics) = 3);
