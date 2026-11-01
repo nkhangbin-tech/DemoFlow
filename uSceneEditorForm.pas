@@ -3,42 +3,37 @@ unit uSceneEditorForm;
 interface
 
 uses
-  Winapi.Windows,
-  Winapi.Messages,
-  System.SysUtils,
-  System.Classes,
-  Vcl.Graphics,
-  Vcl.Controls,
-  Vcl.Forms,
-  Vcl.Dialogs,
-  Vcl.ExtCtrls,
-  Vcl.StdCtrls,
-  Vcl.ComCtrls,
-  Vcl.WinXPanels,
-  VirtualTrees, VirtualTrees.BaseAncestorVCL, VirtualTrees.BaseTree,
+  Winapi.Windows, Winapi.Messages,
+  System.SysUtils, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.ComCtrls, Vcl.WinXPanels,
+  Vcl.Menus, VirtualTrees, VirtualTrees.BaseAncestorVCL, VirtualTrees.BaseTree,
   VirtualTrees.AncestorVCL;
 
 type
-  // Alpha VS1-A: layout-only form. No scene/domain/persistence/runtime binding.
+  // Alpha VS1-A: design-only; no domain/persistence/runtime integration.
   TfrmSceneEditor = class(TForm)
     pnlHeader: TPanel;
     lblDemoTitle: TLabel;
+    lblProjectState: TLabel;
     btnSave: TButton;
     btnReadiness: TButton;
     btnStartLive: TButton;
+    btnBackToWelcome: TButton;
     pnlStatus: TPanel;
     lblStatus: TLabel;
     pnlEditorBody: TPanel;
+    splEditor: TSplitter;
     pnlSceneList: TPanel;
     pnlSceneListHeader: TPanel;
     lblSceneList: TLabel;
-    vstScenes: TVirtualStringTree;
+    lblSceneCount: TLabel;
     pnlSceneActions: TPanel;
     btnAddScene: TButton;
     btnRemoveScene: TButton;
     btnMoveSceneUp: TButton;
     btnMoveSceneDown: TButton;
-    splEditor: TSplitter;
+    vstScenes: TVirtualStringTree;
     pnlInspector: TPanel;
     pnlInspectorHeader: TPanel;
     lblSceneDetails: TLabel;
@@ -49,27 +44,35 @@ type
     lblExplicitVolume: TLabel;
     trkExplicitVolume: TTrackBar;
     edtExplicitVolume: TEdit;
+    lblExplicitVolumeError: TLabel;
     crpSceneDetails: TCardPanel;
     crdEmpty: TCard;
     lblSelectSceneHint: TLabel;
+    lblEmptyDescription: TLabel;
     crdPowerPoint: TCard;
     lblPowerPointHeading: TLabel;
     lblLogicalSlide: TLabel;
     edtLogicalSlide: TEdit;
+    lblLogicalSlideError: TLabel;
     crdBrowser: TCard;
     lblBrowserHeading: TLabel;
     lblBrowserTarget: TLabel;
-    edtBrowserTarget: TComboBox;
+    cboBrowserTarget: TComboBox;
+    lblBrowserTargetError: TLabel;
     crdExternalApp: TCard;
     lblExternalAppHeading: TLabel;
     lblExternalAppTarget: TLabel;
-    edtExternalAppTarget: TComboBox;
-    btnBackToWelcome: TButton;
-    lblEmptyDescription: TLabel;
+    cboExternalAppTarget: TComboBox;
+    lblExternalAppTargetError: TLabel;
+    pmAddScene: TPopupMenu;
+    miAddPowerPointScene: TMenuItem;
+    miAddBrowserScene: TMenuItem;
+    miAddExternalAppScene: TMenuItem;
   end;
 
 var
-  frmSceneEditor:TfrmSceneEditor;
+  frmSceneEditor: TfrmSceneEditor;
+
 implementation
 
 {$R *.dfm}

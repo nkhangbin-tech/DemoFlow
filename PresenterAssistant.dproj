@@ -1,4 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{7B5AAE59-9D66-4C8D-8C70-8F8D33F7F1B1}</ProjectGuid>
         <MainSource>PresenterAssistant.dpr</MainSource>
