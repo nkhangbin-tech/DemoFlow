@@ -5,6 +5,7 @@ program PASceneProjectFileStoreTests;
 uses
   System.IOUtils,
   System.SysUtils,
+  Winapi.Windows,
   PADomainTypes in '..\Domain\PADomainTypes.pas',
   PASceneDomain in '..\Domain\PASceneDomain.pas',
   PASceneDocumentCodec in '..\Persistence\PASceneDocumentCodec.pas',
@@ -193,6 +194,55 @@ begin
     SameBytes(Before, After));
 end;
 
+procedure TestReplacementIOFailure(const Directory: string);
+var
+  TestDirectory, FileName, UnrelatedName: string;
+  Before, UnrelatedBefore: TBytes;
+  Document: TSceneAuthoringSnapshot;
+  SaveResult: TSceneFileOperationResult;
+  DestinationHandle: THandle;
+begin
+  TestDirectory := TPath.Combine(Directory, 'replacement-io-failure');
+  TDirectory.CreateDirectory(TestDirectory);
+  FileName := TPath.Combine(TestDirectory, 'destination.json');
+  UnrelatedName := TPath.Combine(TestDirectory, 'unrelated.json');
+  TFile.WriteAllText(FileName, 'original-destination', TEncoding.UTF8);
+  TFile.WriteAllText(UnrelatedName, 'unrelated-project', TEncoding.UTF8);
+  Before := ReadBytes(FileName);
+  UnrelatedBefore := ReadBytes(UnrelatedName);
+  Document := MakeDocument;
+  // Validate serialization before inducing a replacement-stage I/O failure.
+  SerializeSceneDocument(Document);
+  // Omit FILE_SHARE_DELETE: ReplaceFile requires DELETE access to the
+  // destination. The handle keeps this failure deterministic until closed.
+  DestinationHandle := CreateFile(PWideChar(FileName), GENERIC_READ,
+    FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING,
+    FILE_ATTRIBUTE_NORMAL, 0);
+  if DestinationHandle = INVALID_HANDLE_VALUE then
+    RaiseLastOSError;
+  try
+    SaveResult := SaveSceneProject(FileName, Document);
+  finally
+    CloseHandle(DestinationHandle);
+  end;
+  AssertTrue('B08 replacement I/O failure uses existing error contract',
+    (not SaveResult.Success) and
+    (Pos('Scene Project could not be saved: ', SaveResult.ErrorMessage) = 1) and
+    (Pos(SysErrorMessage(ERROR_SHARING_VIOLATION),
+      SaveResult.ErrorMessage) > 0));
+  AssertTrue('B08 replacement failure preserves destination bytes',
+    SameBytes(Before, ReadBytes(FileName)));
+  AssertTrue('B08 replacement failure cleans temporary files',
+    Length(TDirectory.GetFiles(TestDirectory, '*.tmp')) = 0);
+  AssertTrue('B08 replacement failure preserves unrelated project bytes',
+    SameBytes(UnrelatedBefore, ReadBytes(UnrelatedName)));
+  AssertTrue('B08 replacement failure leaves only original files',
+    Length(TDirectory.GetFiles(TestDirectory)) = 2);
+  SaveResult := SaveSceneProject(FileName, Document);
+  AssertTrue('B08 replacement succeeds after destination handle closes',
+    SaveResult.Success);
+end;
+
 procedure CleanupDirectory(const Directory: string);
 begin
   if TDirectory.Exists(Directory) then
@@ -212,6 +262,7 @@ begin
     TestDrafts(Directory);
     TestErrors(Directory);
     TestFailedSavePreservesDestination(Directory);
+    TestReplacementIOFailure(Directory);
   finally
     CleanupDirectory(Directory);
   end;

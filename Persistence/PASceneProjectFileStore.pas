@@ -58,7 +58,7 @@ begin
     if ExistingDestination then
     begin
       if not ReplaceFile(PWideChar(FileName), PWideChar(TempName), nil,
-        REPLACEFILE_WRITE_THROUGH, nil, nil) then
+        0, nil, nil) then
         RaiseLastOSError;
     end
     else if not MoveFileEx(PWideChar(TempName), PWideChar(FileName),
