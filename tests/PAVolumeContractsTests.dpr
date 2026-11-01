@@ -188,6 +188,8 @@ begin
   Active.Scenes := Copy(Loaded.DocumentResult.Document.Scenes);
   Active.Scenes[0].ExplicitVolumePercent := -1;
   Active.PresentationBaseVolumePercent := 100;
+  Active.PowerPointFileName := 'confirmed.pptx';
+  Active.PowerPointSlideCount := 3;
   ActiveBefore := SerializeSceneDocument(Active);
   SourceBefore := SerializeSceneDocument(Loaded.DocumentResult.Document);
   R := SaveSceneProject(SourceName, Active);
@@ -210,10 +212,10 @@ begin
     (SerializeSceneDocument(Loaded.DocumentResult.Document) = SourceBefore) and
     (Loaded.DocumentResult.SourceFormatVersion = 1));
   R := SaveSceneProjectAs(Loaded, TargetName, Active);
-  Check('Explicit v1-to-v2 Save As succeeds', R.Success);
+  Check('Explicit v1-to-v3 Save As succeeds', R.Success);
   Saved := LoadSceneProject(TargetName);
-  Check('Save As writes v2 with edited base and incomplete draft intact',
-    Saved.Success and (Saved.DocumentResult.SourceFormatVersion = 2) and
+  Check('Save As writes v3 with edited base and incomplete draft intact',
+    Saved.Success and (Saved.DocumentResult.SourceFormatVersion = 3) and
     (SerializeSceneDocument(Saved.DocumentResult.Document) = ActiveBefore));
   Check('Successful Save As preserves original v1 bytes and source context',
     SameBytes(SourceBytes, TFile.ReadAllBytes(SourceName)) and

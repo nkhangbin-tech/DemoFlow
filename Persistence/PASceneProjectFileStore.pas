@@ -59,12 +59,15 @@ begin
   Result := Default(TSceneFileOperationResult);
   TempName := '';
   try
-    // Never upgrade an existing v1 file through ordinary Save.
+    // Existing legacy sources are read-only through ordinary Save.
     if TFile.Exists(FileName) then
     begin
       Existing := LoadSceneProject(FileName);
-      if Existing.Success and (Existing.DocumentResult.SourceFormatVersion = 1) then
-        raise EInvalidOpException.Create('Version 1 requires Save As to a different file.');
+      if Existing.Success and (Existing.DocumentResult.SourceFormatVersion in [1, 2]) then
+        raise EInvalidOpException.Create('Legacy format requires Save As to a different file.');
+      if Existing.Success and (Existing.DocumentResult.SourceFormatVersion = 3) and
+        (Document.PowerPointFileName = '') then
+        raise EInvalidOpException.Create('Version 3 Save requires PowerPoint metadata.');
     end;
     Text := SerializeSceneDocument(Document);
     TempName := NewTemporaryName(FileName);
@@ -100,14 +103,18 @@ function SaveSceneProjectAs(const Source: TSceneFileLoadResult;
   const FileName: string;
   const Document: TSceneAuthoringSnapshot): TSceneFileOperationResult;
 var
-  SourceHandle: THandle;
+  SourceHandle, TargetHandle: THandle;
+  SourceInfo, TargetInfo: TByHandleFileInformation;
 begin
   Result := Default(TSceneFileOperationResult);
   try
     if not Source.Success or not Source.DocumentResult.Success or
-      not (Source.DocumentResult.SourceFormatVersion in [1, 2]) or
+      not (Source.DocumentResult.SourceFormatVersion in [1, 2, 3]) or
       (Source.SourceFileName = '') then
       raise EInvalidOpException.Create('Save As requires a successfully loaded source.');
+    if (Source.DocumentResult.SourceFormatVersion in [1, 2]) and
+      (Document.PowerPointFileName = '') then
+      raise EInvalidOpException.Create('Legacy Save As v3 requires confirmed PowerPoint metadata.');
     if SameText(TPath.GetFullPath(FileName), Source.SourceFileName) then
       raise EInvalidOpException.Create('Save As must use a different source and destination.');
     // Protect the original during the entire write, including alternate path aliases.
@@ -117,6 +124,18 @@ begin
     if SourceHandle = INVALID_HANDLE_VALUE then
       RaiseLastOSError;
     try
+      if not GetFileInformationByHandle(SourceHandle, SourceInfo) then RaiseLastOSError;
+      TargetHandle := CreateFile(PWideChar(FileName), GENERIC_READ,
+        FILE_SHARE_READ or FILE_SHARE_WRITE or FILE_SHARE_DELETE, nil, OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL, 0);
+      if TargetHandle <> INVALID_HANDLE_VALUE then
+      try
+        if not GetFileInformationByHandle(TargetHandle, TargetInfo) then RaiseLastOSError;
+        if (SourceInfo.dwVolumeSerialNumber = TargetInfo.dwVolumeSerialNumber) and
+          (SourceInfo.nFileIndexHigh = TargetInfo.nFileIndexHigh) and
+          (SourceInfo.nFileIndexLow = TargetInfo.nFileIndexLow) then
+          raise EInvalidOpException.Create('Save As destination aliases the source file.');
+      finally CloseHandle(TargetHandle); end;
       Result := SaveSceneProject(FileName, Document);
     finally
       CloseHandle(SourceHandle);

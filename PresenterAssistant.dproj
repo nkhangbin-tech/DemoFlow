@@ -46,7 +46,7 @@
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
-        <DCC_UnitSearchPath>PowerPoint;tools\generated;E:\Software\Programing\Components\JAM-Virtual-TreeView\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>Authoring;Domain;Persistence;PowerPoint;tools\generated;E:\Software\Programing\Components\JAM-Virtual-TreeView\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_IncludePath>tools\generated;E:\Software\Programing\Components\JAM-Virtual-TreeView\Source;$(DCC_IncludePath)</DCC_IncludePath>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>

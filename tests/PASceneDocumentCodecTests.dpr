@@ -266,7 +266,7 @@ begin
   AssertSubstitutionFixture('Incorrect documentType', Base,
     'PA.SceneProject', 'Legacy', '/documentType', 1);
   AssertSubstitutionFixture('Unsupported document version', Base,
-    '"projectFormatVersion":2', '"projectFormatVersion":3',
+    '"projectFormatVersion":2', '"projectFormatVersion":4',
     '/projectFormatVersion', 1);
   AssertSubstitutionFixture('Missing required field', Base,
     '"authoringRevision":"revision-9",', '', '/authoringRevision', 1);

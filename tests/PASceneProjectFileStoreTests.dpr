@@ -44,6 +44,8 @@ end;
 function MakeDocument: TSceneAuthoringSnapshot;
 begin
   Result := NewSceneProject;
+  Result.PowerPointFileName := 'fixture.pptx';
+  Result.PowerPointSlideCount := 3;
   Result.AuthoringRevision := 'file-store-revision';
   SetLength(Result.Scenes, 3);
   Result.Scenes[0] := MakeScene('ppt', skPowerPoint, 0, 3);
@@ -132,6 +134,8 @@ var
 begin
   FileName := TPath.Combine(Directory, 'draft.json');
   Document := Default(TSceneAuthoringSnapshot);
+  Document.PowerPointFileName := 'fixture.pptx';
+  Document.PowerPointSlideCount := 0;
   SaveResult := SaveSceneProject(FileName, Document);
   LoadResult := LoadSceneProject(FileName);
   AssertTrue('B03 empty draft round-trips',

@@ -31,6 +31,9 @@ type
     Scenes: TArray<TSceneDefinition>;
     AuthoringRevision: string;
     PresentationBaseVolumePercent: Integer;
+    // Empty for legacy documents; only verified/confirmed bindings supply metadata.
+    PowerPointFileName: string;
+    PowerPointSlideCount: Integer;
   end;
 
   TSceneValidationDiagnostic = record

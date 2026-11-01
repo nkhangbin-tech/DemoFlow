@@ -76,7 +76,7 @@ var
   MainForm: TMainForm;
 
 implementation
-uses uWelcomeForm, uSceneEditorForm;
+uses uWelcomeForm, uSceneEditorForm, PASceneProjectSession;
 {$R *.dfm}
 
 function TMainForm.ApplicationDataDirectory: string;
@@ -418,6 +418,11 @@ end;
 
 procedure TMainForm.btnShowEditorClick(Sender: TObject);
 begin
+   if not ActiveProjectSession.HasActiveContext then
+   begin
+     uWelcomeForm.WelcomeForm.Show;
+     Exit;
+   end;
    If not Assigned(frmSceneEditor) then
       frmSceneEditor:=TfrmSceneEditor.Create(self);
    frmSceneEditor.Show;

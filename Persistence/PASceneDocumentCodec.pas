@@ -36,7 +36,7 @@ uses
 
 const
   DocumentTypeName = 'PA.SceneProject';
-  ProjectFormatVersion = 2;
+  ProjectFormatVersion = 3;
 
 procedure AddSchemaDiagnostic(
   var Diagnostics: TArray<TSceneSchemaDiagnostic>;
@@ -443,11 +443,25 @@ begin
     (Document.PresentationBaseVolumePercent > 100) then
     raise EArgumentException.Create(
       'PresentationBaseVolumePercent must be an integer from 0 through 100.');
+  if (Document.PowerPointFileName = '') and (Document.PowerPointSlideCount <> 0) then
+    raise EArgumentException.Create('PowerPoint filename is required with slide-count metadata.');
   Root := NewObject;
   try
     Root.AddPair('documentType', DocumentTypeName);
     Root.AddPair('projectFormatVersion',
-      TJSONNumber.Create(ProjectFormatVersion));
+      TJSONNumber.Create(2 + Ord(Document.PowerPointFileName <> '')));
+    if Document.PowerPointFileName <> '' then
+    begin
+      if (ExtractFileName(Document.PowerPointFileName) <> Document.PowerPointFileName) or
+        (Trim(Document.PowerPointFileName) = '') or
+        (ExtractFileExt(Document.PowerPointFileName) = '') or
+        (Pos('/', Document.PowerPointFileName) > 0) or
+        (Pos('\', Document.PowerPointFileName) > 0) or
+        (Document.PowerPointSlideCount < 0) then
+        raise EArgumentException.Create('Invalid project PowerPoint metadata.');
+      Root.AddPair('powerPointFileName', Document.PowerPointFileName);
+      Root.AddPair('powerPointSlideCount', TJSONNumber.Create(Document.PowerPointSlideCount));
+    end;
     Root.AddPair('presentationBaseVolumePercent',
       TJSONNumber.Create(Document.PresentationBaseVolumePercent));
     Root.AddPair('authoringRevision', Document.AuthoringRevision);
@@ -490,19 +504,24 @@ begin
     begin
       Version := IntegerValue(Value, '/projectFormatVersion',
         Result.SchemaDiagnostics);
-      if not (Version in [1, ProjectFormatVersion]) then
+      if not (Version in [1, 2, ProjectFormatVersion]) then
         AddSchemaDiagnostic(Result.SchemaDiagnostics,
-          '/projectFormatVersion', 'Only project format versions 1 and 2 are supported.');
+          '/projectFormatVersion', 'Only project format versions 1, 2 and 3 are supported.');
     end;
     if Version = 1 then
       CheckProperties(Root, '',
         ['documentType', 'projectFormatVersion', 'authoringRevision',
          'scenes'], Result.SchemaDiagnostics)
+    else if Version = 3 then
+      CheckProperties(Root, '',
+        ['documentType', 'projectFormatVersion', 'authoringRevision',
+         'presentationBaseVolumePercent', 'powerPointFileName',
+         'powerPointSlideCount', 'scenes'], Result.SchemaDiagnostics)
     else
       CheckProperties(Root, '',
         ['documentType', 'projectFormatVersion', 'authoringRevision',
          'presentationBaseVolumePercent', 'scenes'], Result.SchemaDiagnostics);
-    if Version = 2 then
+    if Version in [2, 3] then
     begin
       Value := RequiredValue(Root, 'presentationBaseVolumePercent', '',
         Result.SchemaDiagnostics);
@@ -515,6 +534,23 @@ begin
           AddSchemaDiagnostic(Result.SchemaDiagnostics,
             '/presentationBaseVolumePercent', 'Expected an integer from 0 through 100.');
       end;
+    end;
+    if Version = 3 then
+    begin
+      Value := RequiredValue(Root, 'powerPointFileName', '', Result.SchemaDiagnostics);
+      if Value <> nil then
+        Result.Document.PowerPointFileName := StringValue(Value, '/powerPointFileName', Result.SchemaDiagnostics);
+      if (Trim(Result.Document.PowerPointFileName) = '') or
+        (ExtractFileExt(Result.Document.PowerPointFileName) = '') or
+        (ExtractFileName(Result.Document.PowerPointFileName) <> Result.Document.PowerPointFileName) or
+        (Pos('\', Result.Document.PowerPointFileName) > 0) or
+        (Pos('/', Result.Document.PowerPointFileName) > 0) then
+        AddSchemaDiagnostic(Result.SchemaDiagnostics, '/powerPointFileName', 'Expected a nonempty basename including extension.');
+      Value := RequiredValue(Root, 'powerPointSlideCount', '', Result.SchemaDiagnostics);
+      if Value <> nil then
+        Result.Document.PowerPointSlideCount := IntegerValue(Value, '/powerPointSlideCount', Result.SchemaDiagnostics);
+      if Result.Document.PowerPointSlideCount < 0 then
+        AddSchemaDiagnostic(Result.SchemaDiagnostics, '/powerPointSlideCount', 'Expected a nonnegative integer.');
     end;
     Value := RequiredValue(Root, 'authoringRevision',
       '', Result.SchemaDiagnostics);

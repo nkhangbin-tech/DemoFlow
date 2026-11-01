@@ -47,6 +47,7 @@
     Height = 32
     Caption = 'Refresh'
     Enabled = True
+    OnClick = btnCreateRefreshClick
   end
   object lblCreateNoPowerPoint: TLabel
     Left = 20
