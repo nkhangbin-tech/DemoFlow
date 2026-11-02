@@ -31,6 +31,7 @@ type
   end;
 
   TSceneCompileRequest = record
+    PresentationBaseVolumePercent: Integer;
     Scenes: TArray<TSceneDefinition>;
     SourceAuthoringRevision: string;
     ExpectedAuthoringRevision: string;
@@ -68,13 +69,18 @@ type
   TCompiledRuntimeSnapshot = class
   private
     FAuthoringRevision: string;
+    FPresentationBaseVolumePercent: Integer;
+    FActiveVolumeBaselines: TArray<Integer>;
     FScenes: TArray<TCompiledScene>;
     FPhysicalResources: TArray<TCompiledPhysicalResource>;
   public
     constructor Create(const AuthoringRevision: string;
       const Scenes: TArray<TCompiledScene>;
-      const PhysicalResources: TArray<TCompiledPhysicalResource>);
+      const PhysicalResources: TArray<TCompiledPhysicalResource>;
+      PresentationBaseVolumePercent: Integer = 50);
     function SceneCount: Integer;
+    function GetActiveVolumeBaseline(Index: Integer): Integer;
+    property PresentationBaseVolumePercent: Integer read FPresentationBaseVolumePercent;
     function GetScene(Index: Integer): TCompiledScene;
     function GetPhysicalResource(Index: Integer): TCompiledPhysicalResource;
     function GetScenes: TArray<TCompiledScene>;
@@ -88,6 +94,10 @@ type
     Diagnostics: TArray<TSceneCompileDiagnostic>;
   end;
 
+// A raw Default(request) has base 0; copy the project-owned base explicitly.
+function NewSceneCompileRequest(const Project: TSceneAuthoringSnapshot;
+  const ExpectedAuthoringRevision: string): TSceneCompileRequest;
+
 function CompileSceneList(
   const Request: TSceneCompileRequest): TSceneCompileResult;
 function PhysicalResourceKindName(Kind: TPhysicalResourceKind): string;
@@ -96,6 +106,16 @@ implementation
 
 uses
   System.SysUtils;
+
+function NewSceneCompileRequest(const Project: TSceneAuthoringSnapshot;
+  const ExpectedAuthoringRevision: string): TSceneCompileRequest;
+begin
+  Result := Default(TSceneCompileRequest);
+  Result.Scenes := Copy(Project.Scenes);
+  Result.SourceAuthoringRevision := Project.AuthoringRevision;
+  Result.ExpectedAuthoringRevision := ExpectedAuthoringRevision;
+  Result.PresentationBaseVolumePercent := Project.PresentationBaseVolumePercent;
+end;
 
 function PhysicalResourceKindName(Kind: TPhysicalResourceKind): string;
 begin
@@ -198,6 +218,13 @@ var
   ExpectedPrevious, ExpectedNext: string;
 begin
   Result := True;
+  if (Request.PresentationBaseVolumePercent < 0) or
+    (Request.PresentationBaseVolumePercent > 100) then
+  begin
+    AddDiagnostic(Diagnostics, -1, '', 'PresentationBaseVolumePercent',
+      'Project base volume must be an integer from 0 through 100.');
+    Result := False;
+  end;
   if Trim(Request.ExpectedAuthoringRevision) = '' then
   begin
     AddDiagnostic(Diagnostics, -1, '', 'AuthoringRevision',
@@ -388,11 +415,26 @@ end;
 
 constructor TCompiledRuntimeSnapshot.Create(const AuthoringRevision: string;
   const Scenes: TArray<TCompiledScene>;
-  const PhysicalResources: TArray<TCompiledPhysicalResource>);
+  const PhysicalResources: TArray<TCompiledPhysicalResource>;
+  PresentationBaseVolumePercent: Integer);
 var
-  Index: Integer;
+  Index, Baseline: Integer;
 begin
   inherited Create;
+  if (PresentationBaseVolumePercent < 0) or (PresentationBaseVolumePercent > 100) then
+    raise EArgumentOutOfRangeException.Create('Invalid presentation base volume.');
+  FPresentationBaseVolumePercent := PresentationBaseVolumePercent;
+  Baseline := PresentationBaseVolumePercent;
+  SetLength(FActiveVolumeBaselines, Length(Scenes));
+  for Index := 0 to High(Scenes) do
+  begin
+    if (Scenes[Index].ExplicitVolumePercent < -1) or
+      (Scenes[Index].ExplicitVolumePercent > 100) then
+      raise EArgumentOutOfRangeException.Create('Invalid compiled Scene volume.');
+    if Scenes[Index].ExplicitVolumePercent <> -1 then
+      Baseline := Scenes[Index].ExplicitVolumePercent;
+    FActiveVolumeBaselines[Index] := Baseline;
+  end;
   FAuthoringRevision := AuthoringRevision;
   SetLength(FScenes, Length(Scenes));
   for Index := 0 to High(Scenes) do
@@ -405,6 +447,13 @@ end;
 function TCompiledRuntimeSnapshot.SceneCount: Integer;
 begin
   Result := Length(FScenes);
+end;
+
+function TCompiledRuntimeSnapshot.GetActiveVolumeBaseline(Index: Integer): Integer;
+begin
+  if (Index < 0) or (Index >= Length(FActiveVolumeBaselines)) then
+    raise ERangeError.Create('Baseline Scene index is out of range.');
+  Result := FActiveVolumeBaselines[Index];
 end;
 
 function TCompiledRuntimeSnapshot.GetScene(Index: Integer): TCompiledScene;
@@ -493,7 +542,8 @@ begin
     end;
   end;
   Result.Snapshot := TCompiledRuntimeSnapshot.Create(
-    Request.ExpectedAuthoringRevision, Scenes, Resources);
+    Request.ExpectedAuthoringRevision, Scenes, Resources,
+    Request.PresentationBaseVolumePercent);
   Result.Success := True;
 end;
 
