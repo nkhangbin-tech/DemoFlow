@@ -27,10 +27,15 @@ type
     procedure SetProjectBase(Value: Integer);
     function GetActivePath: string;
     function GetSourceVersion: Integer;
+    function GetHasSavedProject: Boolean;
     procedure AdoptSavedPath(const AbsolutePath: string);
   public
     constructor Create;
     procedure NewProject;
+    // Called only after the UI confirms discard or completes Save successfully.
+    procedure CloseProject;
+    // Pure authoring eligibility, not the environmental Readiness Check.
+    function CanEnterReadiness(HasPendingInspectorError: Boolean): Boolean;
     function GetDocument: TSceneAuthoringSnapshot;
     function GetScene(Index: Integer): TSceneDefinition;
     procedure SelectScene(Index: Integer);
@@ -48,6 +53,7 @@ type
     function BindPresentation(const Presentation: TPresentationCandidate;
       ConfirmLegacy: Boolean; out ErrorText: string): Boolean;
     property HasActiveContext: Boolean read FHasActiveContext;
+    property HasSavedProject: Boolean read GetHasSavedProject;
     property Presentation: TPresentationCandidate read FPresentation;
     property LegacyBinding: Boolean read FLegacyBinding;
     property SceneCount: Integer read GetSceneCount;
@@ -112,6 +118,29 @@ begin
   FSource := Default(TSceneFileLoadResult);
   FSelectedIndex := -1;
   FModified := False;
+end;
+
+procedure TSceneProjectSession.CloseProject;
+begin
+  // Reset only in-memory context. Saved files and the recent record are untouched.
+  NewProject;
+end;
+
+function TSceneProjectSession.GetHasSavedProject: Boolean;
+begin
+  // A legacy binding has not persisted the current presentation context until
+  // explicit Save As v3 succeeds. A displayed filename alone is never enough.
+  Result := FHasActiveContext and FSource.Success and
+    FSource.DocumentResult.Success and (FSource.SourceFileName <> '') and
+    (FSource.DocumentResult.SourceFormatVersion = 3) and not FLegacyBinding;
+end;
+
+function TSceneProjectSession.CanEnterReadiness(HasPendingInspectorError: Boolean): Boolean;
+begin
+  Result := False;
+  if HasPendingInspectorError or not FHasActiveContext or not HasSavedProject or
+    FModified or (SceneCount = 0) then Exit;
+  Result := Length(ValidateSceneList(FDocument)) = 0;
 end;
 
 function TSceneProjectSession.GetDocument: TSceneAuthoringSnapshot;

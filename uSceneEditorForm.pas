@@ -6,9 +6,12 @@ uses
  System.Classes, Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, Vcl.ExtCtrls,
  Vcl.ComCtrls, Vcl.Menus, Vcl.WinXPanels, VirtualTrees,
  VirtualTrees.BaseTree, VirtualTrees.Types, PASceneDomain,
- PASceneProjectFileStore, PASceneProjectSession;
+ PASceneProjectFileStore, PASceneProjectSession, VirtualTrees.BaseAncestorVCL,
+  VirtualTrees.AncestorVCL;
 
 type
+ TEditorCloseChoice = (ecSave, ecDiscard, ecCancel);
+
  TfrmSceneEditor = class(TForm)
   btnBackToWelcome: TButton;
   btnSave: TButton;
@@ -64,7 +67,11 @@ type
   FSession: TSceneProjectSession;
   FUpdating: Boolean;
   FVolumeTextValid: Boolean;
+  FClosingSession: Boolean;
   procedure UpdateInspector;
+  procedure RefreshReadinessEligibility;
+  procedure RefreshVolumeStatus;
+  function PersistInspector: TProjectSaveResult;
   procedure TreeGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
     Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
   procedure TreeFocusChanged(Sender: TBaseVirtualTree; Node: PVirtualNode;
@@ -76,10 +83,15 @@ type
   procedure RemoveClick(Sender: TObject);
   procedure MoveClick(Sender: TObject);
   procedure SaveClick(Sender: TObject);
-  procedure BackClick(Sender: TObject);
   procedure EditorShow(Sender: TObject);
   procedure EditorCloseQuery(Sender: TObject; var CanClose: Boolean);
+ protected
+  function ChooseCloseAction: TEditorCloseChoice; virtual;
+  function ChooseSaveAsFile(out FileName: string): Boolean; virtual;
+  procedure PresentSaveError(const ErrorText: string); virtual;
+  procedure ReturnToWelcome; virtual;
  public
+  function TryCloseActiveSession: Boolean;
   constructor Create(AOwner: TComponent); override;
   destructor Destroy; override;
   procedure RefreshEditor;
@@ -92,6 +104,10 @@ type
 var
  frmSceneEditor: TfrmSceneEditor;
 
+// Presentation-only strings; no identity or display-name persistence.
+function SceneListSceneText(const Scene: TSceneDefinition; LogicalIndex: Integer): string;
+function SceneListVolumeText(const Scene: TSceneDefinition): string;
+
 implementation
 
 uses
@@ -99,13 +115,35 @@ uses
 
 {$R *.dfm}
 
+function SceneListSceneText(const Scene: TSceneDefinition; LogicalIndex: Integer): string;
+var
+ Kind: string;
+begin
+ case Scene.SceneKind of
+  skPowerPoint: Kind := 'PowerPoint';
+  skBrowser: Kind := 'Browser';
+  skExternalApp: Kind := 'External App';
+ else
+  Kind := 'Unknown';
+ end;
+ Result := IntToStr(LogicalIndex + 1) + '. ' + Kind;
+ if Scene.SceneKind = skPowerPoint then
+  Result := Result + ' ' + #$00B7 + ' Slide ' + IntToStr(Scene.PowerPointLogicalSlide);
+end;
+
+function SceneListVolumeText(const Scene: TSceneDefinition): string;
+begin
+ if Scene.ExplicitVolumePercent = -1 then Result := #$2014
+ else Result := IntToStr(Scene.ExplicitVolumePercent) + '%';
+end;
+
 constructor TfrmSceneEditor.Create(AOwner: TComponent);
 begin
  inherited Create(AOwner);
  FSession := ActiveProjectSession;
  OnShow := EditorShow;
  OnCloseQuery := EditorCloseQuery;
- btnBackToWelcome.OnClick := BackClick;
+ btnBackToWelcome.OnClick := nil; // Hidden button is not a second navigation route.
  miPowerPoint.Enabled := False;
  miPowerPoint.Visible := False;
  vstScenes.OnGetText := TreeGetText;
@@ -123,7 +161,7 @@ begin
  // Only bind existing controls. The PO-authored DFM remains byte-for-byte intact.
  trkExplicitVolume.Min := 0;
  trkExplicitVolume.Max := 100;
- lblExplicitVolume.Caption := 'Explicit Volume (%) | -1: No Volume Override';
+ lblExplicitVolume.Caption := 'Explicit Volume (%)';
  edtExplicitVolume.TextHint := '-1 = No Volume Override';
  cmbPowerPointTarget.Enabled := False; // No approved domain mapping for this field.
  cmbBrowserTarget.Enabled := False;
@@ -149,21 +187,22 @@ procedure TfrmSceneEditor.TreeGetText(Sender: TBaseVirtualTree;
  var CellText: string);
 var
  Scene: TSceneDefinition;
- Volume: string;
 begin
  CellText := '';
  if (Node = nil) or (Integer(Node.Index) >= FSession.SceneCount) then Exit;
  Scene := FSession.GetScene(Node.Index);
- if Scene.ExplicitVolumePercent = -1 then Volume := 'No Volume Override'
- else Volume := IntToStr(Scene.ExplicitVolumePercent) + '%';
- CellText := Format('%d. %s | %s | %s', [Node.Index + 1,
-  SceneKindName(Scene.SceneKind), Scene.SceneId, Volume]);
+ if Column = 0 then CellText := SceneListSceneText(Scene, Node.Index)
+ else if Column = 1 then CellText := SceneListVolumeText(Scene);
 end;
 
 procedure TfrmSceneEditor.RefreshEditor;
 var
  Node: PVirtualNode;
 begin
+ // Selection is UI state only; never marks the authoring document Modified.
+ if FSession.HasActiveContext and (FSession.SceneCount > 0) and
+   ((FSession.SelectedIndex < 0) or (FSession.SelectedIndex >= FSession.SceneCount)) then
+  FSession.SelectScene(0);
  FUpdating := True;
  vstScenes.BeginUpdate;
  try
@@ -212,8 +251,9 @@ begin
  FUpdating := True;
  try
   if FSession.ActivePath <> '' then lblDemoTitle.Caption := ExtractFileName(FSession.ActivePath)
-  else if FSession.HasActiveContext then lblDemoTitle.Caption := 'New project - ' + FSession.Presentation.FileName;
-  HasSelection := FSession.SelectedIndex >= 0;
+  else if FSession.HasActiveContext then lblDemoTitle.Caption := 'New project - ' + FSession.Presentation.FileName
+  else lblDemoTitle.Caption := 'No active project';
+  HasSelection := FSession.HasActiveContext and (FSession.SelectedIndex >= 0);
   edtExplicitVolume.Enabled := HasSelection;
   trkExplicitVolume.Enabled := HasSelection;
   btnRemoveScene.Enabled := HasSelection;
@@ -231,7 +271,6 @@ begin
    lblSceneId.Caption := 'Scene ID: -';
    lblSceneKind.Caption := 'Scene Kind: -';
    crpSceneDetails.ActiveCard := crdEmpty;
-   sbSceneEditor.SimpleText := 'No Scene selected';
    Exit;
   end;
   Scene := FSession.GetScene(FSession.SelectedIndex);
@@ -239,16 +278,9 @@ begin
   lblSceneKind.Caption := 'Scene Kind: ' + SceneKindName(Scene.SceneKind);
   edtExplicitVolume.Text := IntToStr(Scene.ExplicitVolumePercent);
   if Scene.ExplicitVolumePercent = -1 then
-  begin
-   trkExplicitVolume.Position := 0; // Visual placeholder only, never written to model.
-   sbSceneEditor.SimpleText := 'No Volume Override';
-  end
+   trkExplicitVolume.Position := 0 // Visual placeholder only; no model update.
   else
-  begin
    trkExplicitVolume.Position := Scene.ExplicitVolumePercent;
-   sbSceneEditor.SimpleText := 'Absolute master-volume target: ' +
-    IntToStr(Scene.ExplicitVolumePercent) + '% (authoring only)';
-  end;
   case Scene.SceneKind of
    skPowerPoint: crpSceneDetails.ActiveCard := crdPowerPoint;
    skBrowser: crpSceneDetails.ActiveCard := crdBrowser;
@@ -266,7 +298,35 @@ begin
    cmbExternalAppTarget.ItemIndex := cmbExternalAppTarget.Items.Add(Scene.ExternalAppTargetReference);
  finally
   FUpdating := False;
+  RefreshVolumeStatus;
+  RefreshReadinessEligibility;
  end;
+end;
+
+procedure TfrmSceneEditor.RefreshVolumeStatus;
+var
+ Value: Integer;
+begin
+ // Read committed model data only. Never replace pending Edit text or its error.
+ if not FSession.HasActiveContext or (FSession.SelectedIndex < 0) or
+   (FSession.SelectedIndex >= FSession.SceneCount) then
+ begin
+  sbSceneEditor.SimpleText := 'No Scene selected';
+  Exit;
+ end;
+ Value := FSession.GetScene(FSession.SelectedIndex).ExplicitVolumePercent;
+ if Value = -1 then sbSceneEditor.SimpleText := 'No Volume Override'
+ else if (Value >= 0) and (Value <= 100) then
+  sbSceneEditor.SimpleText := 'Absolute master-volume target: ' +
+   IntToStr(Value) + '% (authoring only)'
+ else
+  sbSceneEditor.SimpleText := 'Selected Scene has an invalid Explicit Volume value.';
+end;
+
+procedure TfrmSceneEditor.RefreshReadinessEligibility;
+begin
+ btnReadiness.Enabled := FSession.CanEnterReadiness(not FVolumeTextValid);
+ // No approved Readiness destination exists; eligibility does not run checks.
 end;
 
 procedure TfrmSceneEditor.VolumeEditChanged(Sender: TObject);
@@ -276,9 +336,11 @@ begin
  if FUpdating or (FSession.SelectedIndex < 0) then Exit;
  FVolumeTextValid := TryParseSceneVolumeText(edtExplicitVolume.Text, Value);
  lblExplicitVolumeError.Visible := not FVolumeTextValid;
+ RefreshReadinessEligibility;
  if not FVolumeTextValid then
  begin
   lblExplicitVolumeError.Caption := 'Use -1 (No Volume Override) or an integer 0..100.';
+  RefreshVolumeStatus;
   Exit; // Invalid text stays visible; model is unchanged and Save is blocked.
  end;
  FSession.TrySetSceneVolume(FSession.SelectedIndex, Value);
@@ -289,10 +351,10 @@ begin
  finally
   FUpdating := False;
  end;
- if Value = -1 then sbSceneEditor.SimpleText := 'No Volume Override'
- else sbSceneEditor.SimpleText := 'Absolute master-volume target: ' + IntToStr(Value) + '% (authoring only)';
+ RefreshVolumeStatus;
  if FSession.Modified then lblModifiedStatus.Caption := 'Modified';
  vstScenes.Invalidate;
+ RefreshReadinessEligibility;
 end;
 
 procedure TfrmSceneEditor.VolumeTrackChanged(Sender: TObject);
@@ -300,6 +362,7 @@ begin
  if FUpdating or (FSession.SelectedIndex < 0) then Exit;
  // The Edit handler is the single commit path for a user volume change.
  edtExplicitVolume.Text := IntToStr(trkExplicitVolume.Position);
+ RefreshVolumeStatus;
 end;
 
 procedure TfrmSceneEditor.AddButtonClick(Sender: TObject);
@@ -343,34 +406,64 @@ begin
  Result.ErrorMessage := 'Open projects through Welcome PowerPoint relinking.';
 end;
 
+function TfrmSceneEditor.ChooseSaveAsFile(out FileName: string): Boolean;
+var
+ Dialog: TSaveDialog;
+begin
+ FileName := '';
+ Dialog := TSaveDialog.Create(Self);
+ try
+  Dialog.Title := 'Save As PA.SceneProject v3';
+  Dialog.Filter := 'PA Scene Project (*.json)|*.json';
+  Dialog.DefaultExt := 'json';
+  Dialog.Options := Dialog.Options + [ofOverwritePrompt, ofPathMustExist];
+  Result := Dialog.Execute;
+  if Result then FileName := Dialog.FileName;
+ finally
+  Dialog.Free;
+ end;
+end;
+
+procedure TfrmSceneEditor.PresentSaveError(const ErrorText: string);
+begin
+ MessageDlg(ErrorText, mtError, [mbOK], 0);
+end;
+
+function TfrmSceneEditor.PersistInspector: TProjectSaveResult;
+var
+ FileName: string;
+begin
+ Result := Default(TProjectSaveResult);
+ if not FVolumeTextValid then
+ begin
+  Result.Status := psFailed;
+  Result.ErrorMessage := 'Correct the invalid Explicit Volume before saving.';
+  if Visible and edtExplicitVolume.CanFocus then edtExplicitVolume.SetFocus;
+  RefreshReadinessEligibility;
+  Exit;
+ end;
+ if not FSession.HasActiveContext then
+ begin
+  Result.Status := psFailed;
+  Result.ErrorMessage := 'No active project to save.';
+  Exit;
+ end;
+ Result := FSession.Save;
+ if Result.Status = psSaveAsRequired then
+ begin
+  if ChooseSaveAsFile(FileName) then Result := FSession.SaveAs(FileName)
+  else Result := FSession.SaveAs('');
+ end;
+ if Result.Status = psSaved then UpdateInspector
+ else RefreshReadinessEligibility;
+end;
+
 procedure TfrmSceneEditor.SaveClick(Sender: TObject);
 var
  R: TProjectSaveResult;
- Dialog: TSaveDialog;
 begin
- if not FVolumeTextValid then
- begin
-  edtExplicitVolume.SetFocus;
-  Exit;
- end;
- R := FSession.Save;
- if R.Status = psSaveAsRequired then
- begin
-  Dialog := TSaveDialog.Create(Self);
-  try
-   Dialog.Title := 'Save As PA.SceneProject v3';
-   Dialog.Filter := 'PA Scene Project (*.json)|*.json';
-   Dialog.DefaultExt := 'json';
-   Dialog.Options := Dialog.Options + [ofOverwritePrompt, ofPathMustExist];
-   if Dialog.Execute then R := FSession.SaveAs(Dialog.FileName)
-   else R := FSession.SaveAs('');
-  finally
-   Dialog.Free;
-  end;
- end;
- if R.Status = psFailed then
-  MessageDlg(R.ErrorMessage, mtError, [mbOK], 0)
- else if R.Status = psSaved then UpdateInspector;
+ R := PersistInspector;
+ if R.Status = psFailed then PresentSaveError(R.ErrorMessage);
 end;
 
 procedure TfrmSceneEditor.EditorShow(Sender: TObject);
@@ -379,15 +472,62 @@ begin
    raise EInvalidOpException.Create('Open or create a project through Welcome first.');
  RefreshEditor;
 end;
-procedure TfrmSceneEditor.BackClick(Sender: TObject);
+
+function TfrmSceneEditor.ChooseCloseAction: TEditorCloseChoice;
+var
+ Answer: Integer;
 begin
- // Keep the active document and unsaved edits; replacement is gated in Welcome.
- WelcomeForm.Show;
- Hide;
+ Answer := TaskMessageDlg('Close project', 'Save changes before closing this project?',
+  mtConfirmation, [mbYes, mbNo, mbCancel], 0, mbCancel, ['Save', 'Don''t Save', 'Cancel']);
+ case Answer of
+  mrYes: Result := ecSave;
+  mrNo: Result := ecDiscard;
+ else
+  Result := ecCancel;
+ end;
 end;
+
+function TfrmSceneEditor.TryCloseActiveSession: Boolean;
+var
+ R: TProjectSaveResult;
+begin
+ Result := False;
+ if FClosingSession then Exit;
+ FClosingSession := True;
+ try
+  if FSession.Modified or not FVolumeTextValid then
+  begin
+   case ChooseCloseAction of
+    ecCancel: Exit;
+    ecSave:
+     begin
+      R := PersistInspector; // Same Save/Save As path as the existing Save button.
+      if R.Status <> psSaved then
+      begin
+       if R.Status = psFailed then PresentSaveError(R.ErrorMessage);
+       Exit; // Preserve active context, draft, invalid input and selection.
+      end;
+     end;
+    ecDiscard: ; // Explicitly confirmed; no write to a saved project.
+   end;
+  end;
+  FSession.CloseProject;
+  RefreshEditor;
+  Result := True;
+ finally
+  FClosingSession := False;
+ end;
+end;
+
+procedure TfrmSceneEditor.ReturnToWelcome;
+begin
+ if Assigned(WelcomeForm) then WelcomeForm.Show;
+end;
+
 procedure TfrmSceneEditor.EditorCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
- CanClose := True; // Closing hides this secondary Form, retaining application session.
- WelcomeForm.Show;
+ CanClose := TryCloseActiveSession;
+ if CanClose then ReturnToWelcome;
 end;
+
 end.
